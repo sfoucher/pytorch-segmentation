@@ -121,7 +121,7 @@ if pretrained_path:
 
 # fp16
 if fp16:
-    # I only took the necessary files because I don't need the C beckend of apex,
+    # I only took the necessary files because I don't need the C backend of apex,
     # which is broken and can't be installed
     # from apex import fp16_utils
     from utils.apex.apex.fp16_utils.fp16util import BN_convert_float
