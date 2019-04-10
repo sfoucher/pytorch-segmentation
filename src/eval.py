@@ -32,12 +32,15 @@ model.eval()
 with torch.no_grad():
     for batched in valid_loader:
         images, labels = batched
+        print('Image : '+str(images.size()))
+        print('Label : '+str(labels.size()))
         images_np = images.numpy().transpose(0, 2, 3, 1)
         labels_np = labels.numpy()
 
         images, labels = images.to(device), labels.to(device)
         preds = model.tta(images, net_type='deeplab')
         preds = preds.argmax(dim=1)
+        print('Preds : '+str(preds.size()))
         preds_np = preds.detach().cpu().numpy()
 
         images_list.append(images_np)
