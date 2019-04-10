@@ -121,9 +121,15 @@ if pretrained_path:
 
 # fp16
 if fp16:
-    from apex import fp16_utils
-    model = fp16_utils.BN_convert_float(model.half())
-    optimizer = fp16_utils.FP16_Optimizer(optimizer, verbose=False, dynamic_loss_scale=True)
+    # I only took the necessary files because I don't need the C beckend of apex,
+    # which is broken and can't be installed
+    # from apex import fp16_utils
+    from utils.apex.apex.fp16_utils.fp16util import BN_convert_float
+    from utils.apex.apex.fp16_utils.fp16_optimizer import FP16_Optimizer
+    # model = fp16_utils.BN_convert_float(model.half())
+    model = BN_convert_float(model.half())
+    # optimizer = fp16_utils.FP16_Optimizer(optimizer, verbose=False, dynamic_loss_scale=True)
+    optimizer = FP16_Optimizer(optimizer, verbose=False, dynamic_loss_scale=True)
     logger.info('Apply fp16')
 
 # Restore model

@@ -1,0 +1,10 @@
+Warning:  multi_tensor_applier fused unscale kernel is unavailable, possibly because apex was installed without --cuda_ext --cpp_ext. Using Python fallback.  Original ImportError was: ModuleNotFoundError("No module named 'amp_C'")
+Warning:  multi_tensor_applier fused unscale kernel is unavailable, possibly because apex was installed without --cuda_ext --cpp_ext. Using Python fallback.  Original ImportError was: ModuleNotFoundError("No module named 'amp_C'")
+Warning:  multi_tensor_applier fused unscale kernel is unavailable, possibly because apex was installed without --cuda_ext --cpp_ext. Using Python fallback.  Original ImportError was: ModuleNotFoundError("No module named 'amp_C'")
+Gradient overflow.  Skipping step, reducing loss scale to 32768.0
+Gradient overflow.  Skipping step, reducing loss scale to 16384.0
+Gradient overflow.  Skipping step, reducing loss scale to 8192.0
+Gradient overflow.  Skipping step, reducing loss scale to 4096.0
+Gradient overflow.  Skipping step, reducing loss scale to 2048.0
+Gradient overflow.  Skipping step, reducing loss scale to 1024.0
+Gradient overflow.  Skipping step, reducing loss scale to 1024.0
