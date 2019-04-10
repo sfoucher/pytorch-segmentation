@@ -53,7 +53,9 @@ def lovasz_softmax_flat(prb, lbl, ignore_index, only_present):
         fg_sorted = fg[perm]
         total_loss += torch.dot(errors_sorted, lovasz_grad(fg_sorted))
         cnt += 1
-    return total_loss / cnt
+    # Change this line to fix a crash that occurs when cnt is 0
+    # return total_loss / cnt
+    return total_loss if cnt == 0 else total_loss / cnt
 
 
 class LovaszSoftmax(nn.Module):

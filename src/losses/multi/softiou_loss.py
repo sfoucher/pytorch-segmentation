@@ -8,6 +8,7 @@ class SoftIoULoss(nn.Module):
         super(SoftIoULoss, self).__init__()
         self.n_classes = n_classes
 
+
     @staticmethod
     def to_one_hot(tensor, n_classes):
         n, h, w = tensor.size()
