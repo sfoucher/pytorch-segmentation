@@ -9,19 +9,21 @@ from torch.utils.data import DataLoader
 
 from models.net import SPPNet
 from dataset.cityscapes import CityscapesDataset
+from dataset.pascal_voc import PascalVocDataset
 from utils.preprocess import minmax_normalize
 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = SPPNet(output_channels=19).to(device)
-model_path = '../model/cityscapes_deeplab_v3_plus/model.pth'
+model_path = '../model/pascal_deeplabv3p/model.pth'
 param = torch.load(model_path)
 model.load_state_dict(param)
 del param
 
 batch_size = 1
 
-valid_dataset = CityscapesDataset(split='valid', net_type='deeplab')
+# valid_dataset = CityscapesDataset(split='valid', net_type='deeplab')
+valid_dataset = PascalVocDataset(split='valid', net_type='deeplab')
 valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
 
 images_list = []
