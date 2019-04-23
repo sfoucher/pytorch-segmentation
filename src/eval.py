@@ -15,7 +15,7 @@ from utils.preprocess import minmax_normalize
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = SPPNet(output_channels=19).to(device)
-model_path = '../model/pascal_deeplabv3p/model.pth'
+model_path = '../model/pascal_deeplabv3p_with_pretrained/model.pth'
 param = torch.load(model_path)
 model.load_state_dict(param)
 del param

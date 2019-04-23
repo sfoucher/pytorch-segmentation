@@ -11,10 +11,10 @@ from utils.preprocess import minmax_normalize, meanstd_normalize
 from utils.custum_aug import PadIfNeededRightBottom
 
 
-class PascalVocDataset(Dataset):
-    n_classes = 21
+class DeepGlobeDataset(Dataset):
+    n_classes = 7
 
-    def __init__(self, base_dir='../data/pascal_voc_2012/VOCdevkit/VOC2012', split='train_aug',
+    def __init__(self, base_dir='../data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012', split='train',
                  affine_augmenter=None, image_augmenter=None, target_size=(512, 512),
                  net_type='unet', ignore_index=255, debug=False):
         self.debug = debug
@@ -84,7 +84,7 @@ class PascalVocDataset(Dataset):
             return img
         else:
             lbl_path = self.lbl_paths[index]
-            print('## pascal_voc.py, l. 87, lbl_path : '+str(lbl_path))
+            print('## deepglobe.py, l. 87, lbl_path : '+str(lbl_path))
             lbl = np.array(Image.open(lbl_path))
             lbl[lbl == 255] = 0
             # ImageAugment (RandomBrightness, AddNoise...)
@@ -98,9 +98,9 @@ class PascalVocDataset(Dataset):
             else:
                 img = minmax_normalize(img, norm_range=(-1, 1))
             if self.resizer:
-                # Label should be 2D and img 3D
-                print("## pascal_voc.py, l. 100, img.shape : " + str(img.shape))
-                print("## pascal_voc.py, l. 100, lbl.shape : " + str(lbl.shape))
+                # Label should be 2D and img 3D but isn't !!!
+                print("## deepglobe.py, l. 100, img.shape : " + str(img.shape))
+                print("## deepglobe.py, l. 100, lbl.shape : " + str(lbl.shape))
                 resized = self.resizer(image=img, mask=lbl)
                 img, lbl = resized['image'], resized['mask']
             # AffineAugment (Horizontal Flip, Rotate...)

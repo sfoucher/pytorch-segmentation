@@ -88,4 +88,6 @@ class PadIfNeededRightBottom(DualTransform):
         img_height, img_width = img.shape[:2]
         pad_height = max(0, self.min_height-img_height)
         pad_width = max(0, self.min_width-img_width)
+        # Here with pascal i have 2D img and with deepglobe 3D : problem !!
+        print("## custom_aug.py, l. 92, img.shape : "+str(img.shape))
         return np.pad(img, ((0, pad_height), (0, pad_width)), 'constant', constant_values=self.ignore_index)

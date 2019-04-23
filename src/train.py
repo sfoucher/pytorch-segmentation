@@ -59,6 +59,10 @@ elif dataset == 'cityscapes':
     from dataset.cityscapes import CityscapesDataset as Dataset
     net_config['output_channels'] = 19
     classes = np.arange(1, 19)
+elif dataset == 'deepglobe':
+    from dataset.deepglobe import DeepGlobeDataset as Dataset
+    net_config['output_channels'] = 7
+    classes = np.arange(1, 7)
 else:
     raise NotImplementedError
 del data_config['dataset']
