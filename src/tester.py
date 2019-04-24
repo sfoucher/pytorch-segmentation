@@ -10,6 +10,7 @@ class Tester:
     def __init__(self):
         matplotlib.use('Agg')
 
+
     @staticmethod
     def infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg',
                             model_path='../model/cityscapes_deeplab_v3_plus/model.pth'):
@@ -51,7 +52,6 @@ class Tester:
             preds_np = preds.detach().cpu().numpy()
             preds_np = preds_np[0]
 
-            # Probably need to transform preds to a png now !
             print('Generating mask...')
 
             pred_pil = Image.fromarray(preds_np.astype(np.uint8))
@@ -62,6 +62,6 @@ class Tester:
 
 if __name__ == '__main__':
     tester = Tester()
-    # tester.infer_image_by_path()
-    tester.infer_image_by_path(image_path='../data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2007_000549.jpg',
-                               model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth')
+    tester.infer_image_by_path()
+    # tester.infer_image_by_path(image_path='../data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2007_000549.jpg',
+    #                            model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth')
