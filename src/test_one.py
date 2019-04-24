@@ -1,64 +1,67 @@
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
-
 import torch
 import cv2
-
+from PIL import Image
 from models.net import SPPNet
 
-test_image_path = '/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg'
 
-print('Loading model...')
+class Tester:
+    def __init__(self):
+        matplotlib.use('Agg')
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-model = SPPNet(output_channels=19).to(device)
-model_path = '../model/cityscapes_deeplab_v3_plus/model.pth'
-param = torch.load(model_path)
-model.load_state_dict(param)
-del param
+    @staticmethod
+    def infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg',
+                            model_path='../model/cityscapes_deeplab_v3_plus/model.pth'):
+        print('Loading model '+model_path+'...')
 
-batch_size = 1
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        model = SPPNet(output_channels=19).to(device)
+        param = torch.load(model_path)
+        model.load_state_dict(param)
+        del param
 
-# Notify layers that we are in eval mode (for batchnorm, dropout)
-model.eval()
-# Deactivate autograd engine to reduce memory usage (no need backprop when inferring)
-with torch.no_grad():
-    print('Loading image...')
-    img = cv2.imread(test_image_path, cv2.IMREAD_COLOR)
+        print('...done!')
 
-    """
-    cv2.imshow('image', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    """
+        # Notify layers that we are in eval mode (for batchnorm, dropout)
+        model.eval()
+        # Deactivate autograd engine to reduce memory usage (no need backprop when inferring)
+        with torch.no_grad():
+            print('Preparing image '+image_path+'...')
+            img = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
-    print('Predicting...')
+            # Transpose image to fit torch tensor format
+            img = img.transpose(2, 0, 1)
+            # Conversion to torch tensor
+            img_tensor = torch.tensor([img])
+            # Conversion to float to fit torch model
+            img_tensor = img_tensor.float()
 
-    # Transpose image to fit torch tensor format
-    img = img.transpose(2, 0, 1)
-    # Conversion to torch tensor
-    img_tensor = torch.tensor([img])
-    # Conversion to float to fit torch model
-    img_tensor = img_tensor.float()
-    # Print tensor size
-    print('Input tensor size : ' + str(img_tensor.size()))
+            print('Inferring...')
 
-    # Send to CPU or GPU depending on the hardware found
-    img_tensor = img_tensor.to(device)
+            # Send to CPU or GPU depending on the hardware found
+            img_tensor = img_tensor.to(device)
 
-    # Generate predictions
-    preds = model.tta(img_tensor, net_type='deeplab')
-    print(preds.size())
-    # Not sure what this does in initial code, probably helps extracting a single class
-    # preds = preds.argmax(dim=1)
-    print(preds.size())
+            # Generate predictions
+            preds = model.tta(img_tensor, net_type='deeplab')
+            # Not sure what this does in initial code, probably helps extracting a single class
+            preds = preds.argmax(dim=1)
 
-    # Convert back to nparray procssable as an image
-    preds_np = preds.detach().cpu().numpy()
+            # Convert back to nparray procssable as an image
+            preds_np = preds.detach().cpu().numpy()
+            preds_np = preds_np[0]
 
-    print(type(preds_np))
+            # Probably need to transform preds to a png now !
+            print('Generating mask...')
 
-    # Probably need to transform preds to a png now !
+            pred_pil = Image.fromarray(preds_np.astype(np.uint8))
+            pred_pil.show()
+
+            print('Done.')
 
 
+if __name__ == '__main__':
+    tester = Tester()
+    # tester.infer_image_by_path()
+    tester.infer_image_by_path(image_path='../data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2007_000549.jpg',
+                               model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth')
