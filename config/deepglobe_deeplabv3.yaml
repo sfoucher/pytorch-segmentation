@@ -3,7 +3,7 @@ Net:
   dec_type: 'aspp'
   output_stride: 8
 Data:
-  dataset: 'pascal'
+  dataset: 'deepglobe'
   target_size: (512, 512)
 Train:
   max_epoch: 60
