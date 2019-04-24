@@ -84,8 +84,12 @@ class DeepGlobeDataset(Dataset):
             return img
         else:
             lbl_path = self.lbl_paths[index]
-            print('## deepglobe.py, l. 87, lbl_path : '+str(lbl_path))
-            lbl = np.array(Image.open(lbl_path))
+
+            inter_img = Image.open(lbl_path)
+            # Convert the RGB images to the P mode in PIL
+            inter_img = inter_img.convert('P', palette=Image.ADAPTIVE, colors=256)
+            lbl = np.array(inter_img)
+
             lbl[lbl == 255] = 0
             # ImageAugment (RandomBrightness, AddNoise...)
             if self.image_augmenter:
@@ -98,9 +102,6 @@ class DeepGlobeDataset(Dataset):
             else:
                 img = minmax_normalize(img, norm_range=(-1, 1))
             if self.resizer:
-                # Label should be 2D and img 3D but isn't !!!
-                print("## deepglobe.py, l. 100, img.shape : " + str(img.shape))
-                print("## deepglobe.py, l. 100, lbl.shape : " + str(lbl.shape))
                 resized = self.resizer(image=img, mask=lbl)
                 img, lbl = resized['image'], resized['mask']
             # AffineAugment (Horizontal Flip, Rotate...)
@@ -131,7 +132,7 @@ if __name__ == '__main__':
     # image_augmenter = albu.Compose([albu.GaussNoise(p=.5),
     #                                 albu.RandomBrightnessContrast(p=.5)])
     image_augmenter = None
-    dataset = PascalVocDataset(affine_augmenter=affine_augmenter, image_augmenter=image_augmenter, split='valid',
+    dataset = DeepGlobeDataset(affine_augmenter=affine_augmenter, image_augmenter=image_augmenter, split='valid',
                                net_type='deeplab', ignore_index=21, target_size=(512, 512), debug=True)
     dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
     print(len(dataset))
@@ -148,6 +149,6 @@ if __name__ == '__main__':
                 axes[j][0].set_yticks([])
                 axes[j][1].set_xticks([])
                 axes[j][1].set_yticks([])
-            plt.savefig('dataset/pascal_voc.png')
+            plt.savefig('dataset/deepglobe.png')
             plt.close()
         break

@@ -14,7 +14,8 @@ from utils.custum_aug import PadIfNeededRightBottom
 class PascalVocDataset(Dataset):
     n_classes = 21
 
-    def __init__(self, base_dir='../data/pascal_voc_2012/VOCdevkit/VOC2012', split='train_aug',
+    # Change split : moins d'images mais va plus vite et simplifie les tests
+    def __init__(self, base_dir='../data/pascal_voc_2012/VOCdevkit/VOC2012', split='train',#split='train_aug',
                  affine_augmenter=None, image_augmenter=None, target_size=(512, 512),
                  net_type='unet', ignore_index=255, debug=False):
         self.debug = debug
@@ -84,8 +85,11 @@ class PascalVocDataset(Dataset):
             return img
         else:
             lbl_path = self.lbl_paths[index]
-            print('## pascal_voc.py, l. 87, lbl_path : '+str(lbl_path))
-            lbl = np.array(Image.open(lbl_path))
+
+            # Open image and convert to numpy array
+            inter_img = Image.open(lbl_path)
+            lbl = np.array(inter_img)
+
             lbl[lbl == 255] = 0
             # ImageAugment (RandomBrightness, AddNoise...)
             if self.image_augmenter:
@@ -99,8 +103,6 @@ class PascalVocDataset(Dataset):
                 img = minmax_normalize(img, norm_range=(-1, 1))
             if self.resizer:
                 # Label should be 2D and img 3D
-                print("## pascal_voc.py, l. 100, img.shape : " + str(img.shape))
-                print("## pascal_voc.py, l. 100, lbl.shape : " + str(lbl.shape))
                 resized = self.resizer(image=img, mask=lbl)
                 img, lbl = resized['image'], resized['mask']
             # AffineAugment (Horizontal Flip, Rotate...)
