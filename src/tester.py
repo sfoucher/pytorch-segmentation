@@ -3,10 +3,8 @@ import matplotlib
 import torch
 import cv2
 from PIL import Image
-from models.net import SPPNet
 
 import matplotlib.pyplot as plt
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from models.net import SPPNet
 from dataset.cityscapes import CityscapesDataset
@@ -16,8 +14,9 @@ from utils.preprocess import minmax_normalize
 
 
 class Tester:
-    def __init__(self, model_path='../model/deepglobe_deeplabv3/model_tmp.pth', output_channels=19,
-                 split='valid', net_type='deeplab', batch_size=1, shuffle=True):
+    def __init__(self, model_path='../model/deepglobe_deeplabv3/model_tmp.pth', dataset='deepglobe',
+                 output_channels=19, split='valid', net_type='deeplab', batch_size=1, shuffle=True):
+
         print('[Tester] [Init] Initializing tester...')
 
         matplotlib.use('Agg')
@@ -32,9 +31,16 @@ class Tester:
         self.model.load_state_dict(param)
         del param
 
-        # valid_dataset = CityscapesDataset(split='valid', net_type='deeplab')
-        # valid_dataset = PascalVocDataset(split='valid', net_type='deeplab')
-        self.valid_dataset = DeepGlobeDataset(split=split, net_type=net_type)
+        # Create data loader depending on dataset, split and net type
+        if dataset == 'pascal':
+            self.valid_dataset = PascalVocDataset(split=split, net_type=net_type)
+        elif dataset == 'cityscapes':
+            self.valid_dataset = CityscapesDataset(split=split, net_type=net_type)
+        elif dataset == 'deepglobe':
+            self.valid_dataset = DeepGlobeDataset(split=split, net_type=net_type)
+        else:
+            raise NotImplementedError
+
         self.valid_loader = DataLoader(self.valid_dataset, batch_size=batch_size, shuffle=shuffle)
 
         print('[Tester] [Init] ...done!')
@@ -141,5 +147,5 @@ if __name__ == '__main__':
     # model_path = '../model/pascal_deeplabv3p_with_pretrained/model.pth'
     tester = Tester(model_path='../model/deepglobe_deeplabv3/model_tmp.pth')
     tester.infer_image_by_path()
-    # tester.infer_image_by_path(image_path='../data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2007_000549.jpg')
+    tester.infer_image_by_path(image_path='../data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2007_000549.jpg')
     tester.make_demo_image()
