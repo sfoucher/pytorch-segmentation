@@ -123,7 +123,8 @@ class Tester:
                             display=False):
         """
         Opens image from fs and passes it through the loaded network, then displays and saves the result.
-        :param display:
+        :param output_name: Output image name
+        :param display: Display images in windows or not
         :param image_path: Path of input images
         :return: null
         """
@@ -153,10 +154,33 @@ class Tester:
         plt.imsave(output_name+'.png', preds_np[0], format="png")
         plt.close()
 
+        output_img = Image.open(output_name+'.png')
         if display:
-            output_img = Image.open('single_test_output.png')
             output_img.show()
+
+        overlay = Tester.make_overlay(output_img, input_img)
+        if display:
+            overlay.show()
+        overlay.save(output_name+'_overlay.png')
         print('[Tester] [Single test] Done.')
+
+    @staticmethod
+    def make_overlay(pred, img):
+        print('[Tester] [Overlay] Building overlay...')
+        # Make preds semi_transparent
+        pred = pred.convert('RGBA')
+        data = pred.getdata()  # you'll get a list of tuples
+        new_data = []
+        for a in data:
+            a = a[:3]  # you'll get your tuple shorten to RGB
+            a = a + (100,)  # change the 100 to any transparency number you like between (0,255)
+            new_data.append(a)
+        pred.putdata(new_data)  # you'll get your new img ready
+
+        # Paste translucid preds on input image
+        img.paste(pred, (0, 0), pred)
+        print('[Tester] [Overlay] Done.')
+        return img
 
 
 if __name__ == '__main__':
