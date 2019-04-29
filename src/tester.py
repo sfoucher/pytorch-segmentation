@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from PIL import Image
-
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from models.net import SPPNet
@@ -14,6 +13,16 @@ from utils.preprocess import minmax_normalize
 class Tester:
     def __init__(self, model_path='../model/deepglobe_deeplabv3/model_tmp.pth', dataset='deepglobe',
                  output_channels=19, split='valid', net_type='deeplab', batch_size=1, shuffle=True):
+        """
+        Initializes the tester by loading the model with the good parameters.
+        :param model_path: Path to model weights
+        :param dataset: dataset used amongst {'deepglobe', 'pascal', 'cityscapes'}
+        :param output_channels: num of output channels of model
+        :param split: split to be used amongst {'train', 'valid'}
+        :param net_type: model type to be used amongst {'deeplab', 'unet'}
+        :param batch_size: batch size when loading images (always 1 here)
+        :param shuffle: when loading images from dataset
+        """
 
         print('[Tester] [Init] Initializing tester...')
 
@@ -44,6 +53,10 @@ class Tester:
         print('[Tester] [Init] Tester created.')
 
     def make_demo_image(self):
+        """
+        Picks 4 images from dataset randomly and creates image with raw, inferred and label pictures.
+        :return: null
+        """
         images_list = []
         labels_list = []
         preds_list = []
@@ -105,6 +118,11 @@ class Tester:
         print('[Tester] [Demo] Done.')
 
     def infer_image_by_path(self, image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg'):
+        """
+        Opens image from fs and passes it through the loaded network, then displays and saves the result.
+        :param image_path: Path of input images
+        :return: null
+        """
         print('[Tester] [Single test] Opening image '+image_path+'...')
         custom_img = np.array(Image.open(image_path))
         custom_img = minmax_normalize(custom_img, norm_range=(-1, 1))
