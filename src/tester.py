@@ -117,16 +117,21 @@ class Tester:
 
         print('[Tester] [Demo] Done.')
 
-    def infer_image_by_path(self, image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg'):
+    def infer_image_by_path(self,
+                            image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg',
+                            output_name='single_test_output',
+                            display=False):
         """
         Opens image from fs and passes it through the loaded network, then displays and saves the result.
+        :param display:
         :param image_path: Path of input images
         :return: null
         """
         print('[Tester] [Single test] Opening image '+image_path+'...')
         # Open and prepare image
         input_img = Image.open(image_path)
-        input_img.show()
+        if display:
+            input_img.show()
 
         custom_img = np.array(input_img)
         custom_img = minmax_normalize(custom_img, norm_range=(-1, 1))
@@ -145,11 +150,12 @@ class Tester:
         print('[Tester] [Single test] Processing result...')
         # Display and save result mask
         plt.imshow(preds_np[0])
-        plt.imsave('single_test_output.png', preds_np[0], format="png")
+        plt.imsave(output_name+'.png', preds_np[0], format="png")
         plt.close()
 
-        output_img = Image.open('single_test_output.png')
-        output_img.show()
+        if display:
+            output_img = Image.open('single_test_output.png')
+            output_img.show()
         print('[Tester] [Single test] Done.')
 
 
@@ -157,7 +163,7 @@ if __name__ == '__main__':
     # tester = Tester(model_path='../model/deepglobe_deeplabv3_second_pass/model_tmp.pth')
     tester = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')
     # tester.make_demo_image()
-    # tester.infer_image_by_path()
-    tester.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg')
+    tester.infer_image_by_path(display=True, output_name='custom_output')
+    # tester.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg')
     # tester.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2010_003358.jpg')
 
