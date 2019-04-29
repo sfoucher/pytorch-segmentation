@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib
 import torch
-import cv2
 from PIL import Image
 
 import matplotlib.pyplot as plt
@@ -19,11 +17,10 @@ class Tester:
 
         print('[Tester] [Init] Initializing tester...')
 
-        matplotlib.use('Agg')
         self.model_path = model_path
 
         # Load model
-        print('[Tester] [Init] Loading model ' + model_path + ' with '+str(output_channels)+' output channels...')
+        print('[Tester] [Init] Loading model ' + model_path + ' with ' + str(output_channels) + ' output channels...')
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.model = SPPNet(output_channels=output_channels).to(self.device)
@@ -102,50 +99,40 @@ class Tester:
             ax[2].set_yticks([])
 
         plt.savefig('eval.png')
+        plt.show()
         plt.close()
 
         print('[Tester] [Demo] Done.')
 
     def infer_image_by_path(self, image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg'):
-        # Notify layers that we are in eval mode (for batchnorm, dropout)
+        print('[Tester] [Single test] Opening image '+image_path+'...')
+        custom_img = np.array(Image.open(image_path))
+        custom_img = minmax_normalize(custom_img, norm_range=(-1, 1))
+        custom_img = custom_img.transpose(2, 0, 1)
+        custom_img = torch.FloatTensor([custom_img])
+
+        print('[Tester] [Single test] Gathering images and inferring...')
         self.model.eval()
-        # Deactivate autograd engine to reduce memory usage (no need backprop when inferring)
         with torch.no_grad():
-            print('[Tester] [Single test] Preparing image ' + image_path + '...')
-            img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-
-            # Transpose image to fit torch tensor format
-            img = img.transpose(2, 0, 1)
-            # Conversion to torch tensor
-            img_tensor = torch.tensor([img])
-            # Conversion to float to fit torch model
-            img_tensor = img_tensor.float()
-
-            print('[Tester] [Single test] Inferring...')
-
-            # Send to CPU or GPU depending on the hardware found
-            img_tensor = img_tensor.to(self.device)
-
-            # Generate predictions
-            preds = self.model.tta(img_tensor, net_type='deeplab')
-            # Not sure what this does in initial code, probably helps extracting a single class
+            custom_img = custom_img.to(self.device)
+            preds = self.model.tta(custom_img, net_type='deeplab')
             preds = preds.argmax(dim=1)
-
-            # Convert back to nparray procssable as an image
             preds_np = preds.detach().cpu().numpy()
-            preds_np = preds_np[0]
 
-            print('[Tester] [Single test] Generating mask...')
+        print('[Tester] [Single test] Processing results...')
+        plt.imshow(preds_np[0])
+        plt.savefig('single_test_output.png')
+        plt.show()
+        plt.close()
 
-            pred_pil = Image.fromarray(preds_np.astype(np.uint8))
-            pred_pil.show()
-
-            print('[Tester] [Single test] Done.')
+        print('[Tester] [Single test] Done.')
 
 
 if __name__ == '__main__':
-    # model_path = '../model/pascal_deeplabv3p_with_pretrained/model.pth'
-    tester = Tester(model_path='../model/deepglobe_deeplabv3/model_tmp.pth')
-    tester.infer_image_by_path()
-    tester.infer_image_by_path(image_path='../data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2007_000549.jpg')
+    # tester = Tester(model_path='../model/deepglobe_deeplabv3_second_pass/model_tmp.pth')
+    tester = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')
     tester.make_demo_image()
+    tester.infer_image_by_path()
+    # tester.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg')
+    # tester.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2010_003358.jpg')
+
