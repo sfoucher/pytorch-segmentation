@@ -213,8 +213,12 @@ for i_epoch in range(start_epoch, max_epoch):
     torch.save(model.state_dict(), output_dir.joinpath('model_tmp.pth'))
     torch.save(optimizer.state_dict(), output_dir.joinpath('opt_tmp.pth'))
 
-    # if (i_epoch + 1) % 10 == 0:
-    # I compute the valid score at each epoch (longer)
+    """
+    There is no valid reason co compute the validation score only very 10 epochs, so I change this part
+    """
+    """
+    if (i_epoch + 1) % 10 == 0:
+    """
     valid_losses = []
     valid_ious = []
     model.eval()
