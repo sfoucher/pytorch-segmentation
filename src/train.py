@@ -8,7 +8,6 @@ from pathlib import Path
 from tqdm import tqdm
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
@@ -18,8 +17,6 @@ from logger.log import debug_logger
 from logger.plot import history_ploter
 from utils.optimizer import create_optimizer
 from utils.metrics import compute_iou_batch
-
-import math
 
 
 parser = argparse.ArgumentParser()
@@ -133,6 +130,16 @@ if pretrained_path:
     param = torch.load(pretrained_path)
     model.load_state_dict(param)
     del param
+
+    #########################################
+    freeze = False
+    if freeze:
+        # Code de Rémi
+        # Freeze layers
+        for param_index in range(int((len(optimizer.param_groups[0]['params'])) * 0.5)):
+            optimizer.param_groups[0]['params'][param_index].requires_grad = False
+        print('The first half of parameters were frozen')
+    #########################################
 
 # fp16
 if fp16:
