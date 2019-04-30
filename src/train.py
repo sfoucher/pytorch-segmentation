@@ -42,6 +42,18 @@ fp16 = train_config['fp16']
 resume = train_config['resume']
 pretrained_path = train_config['pretrained_path']
 
+#########################################
+# Deterministic training
+fix_seed = False
+if fix_seed:
+    seed = 100
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed=seed)
+    import random
+    random.seed(a=100)
+#########################################
+
 # Network
 if 'unet' in net_config['dec_type']:
     net_type = 'unet'

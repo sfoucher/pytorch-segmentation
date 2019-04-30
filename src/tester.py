@@ -158,22 +158,32 @@ class Tester:
         if display:
             output_img.show()
 
-        overlay = Tester.make_overlay(output_img, input_img)
+        overlay = Tester.make_overlay(output_img, input_img, 100)
         if display:
             overlay.show()
         overlay.save(output_name+'_overlay.png')
         print('[Tester] [Single test] Done.')
 
     @staticmethod
-    def make_overlay(pred, img):
+    def make_overlay(pred, img, transparency):
+        """
+        Build PIL image from input img and mask overlay with given transparency.
+        :param pred: mask input
+        :param img: img input
+        :param transparency: transparency wanted between 0..255
+        :return: PIL image result
+        """
         print('[Tester] [Overlay] Building overlay...')
+        if transparency < 0 or transparency > 255:
+            print('ERROR : Transparency should be in range 0..255.')
+            exit(-1)
         # Make preds semi_transparent
         pred = pred.convert('RGBA')
         data = pred.getdata()  # you'll get a list of tuples
         new_data = []
         for a in data:
             a = a[:3]  # you'll get your tuple shorten to RGB
-            a = a + (100,)  # change the 100 to any transparency number you like between (0,255)
+            a = a + (transparency,)  # change the 100 to any transparency number you like between (0,255)
             new_data.append(a)
         pred.putdata(new_data)  # you'll get your new img ready
 
@@ -184,10 +194,12 @@ class Tester:
 
 
 if __name__ == '__main__':
-    # tester = Tester(model_path='../model/deepglobe_deeplabv3_second_pass/model_tmp.pth')
-    tester = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')
-    # tester.make_demo_image()
-    tester.infer_image_by_path(display=True, output_name='custom_output')
-    # tester.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg')
-    # tester.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2010_003358.jpg')
+    tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_second_pass/model_tmp.pth', dataset='deepglobe', output_channels=19, split='train', net_type='deeplab', batch_size=1, shuffle=True)
+    tester_deepglobe.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/330838.jpg', display=True, output_name='custom_output')
+
+    # tester_pascal = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')
+    # tester_pascal.make_demo_image()
+    # tester_pascal.infer_image_by_path(display=True, output_name='custom_output')
+    # tester_pascal.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg', display=True, output_name='pascal_custom_output')
+    # tester_pascal.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2009_004857.jpg', display=True, output_name='pascal_custom_output')
 
