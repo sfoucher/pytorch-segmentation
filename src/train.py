@@ -1,9 +1,6 @@
 import pickle
 import argparse
 import yaml
-import pickle
-import argparse
-import yaml
 import numpy as np
 import albumentations as albu
 from collections import OrderedDict
@@ -21,6 +18,8 @@ from logger.log import debug_logger
 from logger.plot import history_ploter
 from utils.optimizer import create_optimizer
 from utils.metrics import compute_iou_batch
+
+import math
 
 
 parser = argparse.ArgumentParser()
@@ -207,44 +206,49 @@ for i_epoch in range(start_epoch, max_epoch):
     torch.save(model.state_dict(), output_dir.joinpath('model_tmp.pth'))
     torch.save(optimizer.state_dict(), output_dir.joinpath('opt_tmp.pth'))
 
-    if (i_epoch + 1) % 10 == 0:
-        valid_losses = []
-        valid_ious = []
-        model.eval()
-        with torch.no_grad():
-            with tqdm(valid_loader) as _tqdm:
-                for batched in _tqdm:
-                    images, labels = batched
-                    if fp16:
-                        images = images.half()
-                    images, labels = images.to(device), labels.to(device)
-                    preds = model.tta(images, net_type=net_type)
-                    if fp16:
-                        loss = loss_fn(preds.float(), labels)
-                    else:
-                        loss = loss_fn(preds, labels)
+    # if (i_epoch + 1) % 10 == 0:
+    # I compute the valid score at each epoch (longer)
+    valid_losses = []
+    valid_ious = []
+    model.eval()
+    with torch.no_grad():
+        with tqdm(valid_loader) as _tqdm:
+            for batched in _tqdm:
+                images, labels = batched
+                if fp16:
+                    images = images.half()
+                images, labels = images.to(device), labels.to(device)
+                preds = model.tta(images, net_type=net_type)
+                if fp16:
+                    loss = loss_fn(preds.float(), labels)
+                else:
+                    loss = loss_fn(preds, labels)
 
-                    preds_np = preds.detach().cpu().numpy()
-                    labels_np = labels.detach().cpu().numpy()
-                    iou = compute_iou_batch(np.argmax(preds_np, axis=1), labels_np, classes)
+                preds_np = preds.detach().cpu().numpy()
+                labels_np = labels.detach().cpu().numpy()
 
-                    _tqdm.set_postfix(OrderedDict(seg_loss=f'{loss.item():.5f}', iou=f'{iou:.3f}'))
-                    valid_losses.append(loss.item())
-                    valid_ious.append(iou)
+                # I changed a parameter in the compute_iou method to prevent it from yielding nans
+                iou = compute_iou_batch(np.argmax(preds_np, axis=1), labels_np, classes)
 
-        valid_loss = np.mean(valid_losses)
-        valid_iou = np.mean(valid_ious)
-        logger.info(f'valid seg loss: {valid_loss}')
-        logger.info(f'valid iou: {valid_iou}')
+                _tqdm.set_postfix(OrderedDict(seg_loss=f'{loss.item():.5f}', iou=f'{iou:.3f}'))
+                valid_losses.append(loss.item())
+                valid_ious.append(iou)
 
-        if best_metrics < valid_iou:
-            best_metrics = valid_iou
-            logger.info('Best Model!')
-            torch.save(model.state_dict(), output_dir.joinpath('model.pth'))
-            torch.save(optimizer.state_dict(), output_dir.joinpath('opt.pth'))
+    valid_loss = np.mean(valid_losses)
+    valid_iou = np.mean(valid_ious)
+    logger.info(f'valid seg loss: {valid_loss}')
+    logger.info(f'valid iou: {valid_iou}')
+
+    if best_metrics < valid_iou:
+        best_metrics = valid_iou
+        logger.info('Best Model!')
+        torch.save(model.state_dict(), output_dir.joinpath('model.pth'))
+        torch.save(optimizer.state_dict(), output_dir.joinpath('opt.pth'))
+    """
     else:
         valid_loss = None
         valid_iou = None
+    """
 
     loss_history.append([train_loss, valid_loss])
     iou_history.append([train_iou, valid_iou])

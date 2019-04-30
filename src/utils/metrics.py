@@ -20,7 +20,8 @@ def compute_ious(pred, label, classes, ignore_index=255, only_present=True):
 
 
 def compute_iou_batch(preds, labels, classes=None):
-    iou = np.nanmean([np.nanmean(compute_ious(pred, label, classes)) for pred, label in zip(preds, labels)])
+    # I added only_present=False to prevent the mean to be nan which caused training problems
+    iou = np.nanmean([np.nanmean(compute_ious(pred, label, classes, only_present=False)) for pred, label in zip(preds, labels)])
     return iou
 
 
