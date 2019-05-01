@@ -194,15 +194,20 @@ class Tester:
 
 
 if __name__ == '__main__':
+    print('[Tester] Launching tests.')
     # tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_second_pass/model_tmp.pth', dataset='deepglobe', output_channels=19, split='train', net_type='deeplab', batch_size=1, shuffle=True)
     # tester_deepglobe.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/330838.jpg', display=True, output_name='custom_output')
 
-    tester_deepglobe_no_pretrained = Tester(model_path='../model/deepglobe_deeplabv3_no_pretrained/model.pth', dataset='deepglobe', output_channels=7, split='train', net_type='deeplab', batch_size=1, shuffle=True)
-    tester_deepglobe_no_pretrained.make_demo_image()
+    # tester_deepglobe_no_pretrained_7_channels = Tester(model_path='../model/deepglobe_deeplabv3_no_pretrained_7_channels/model.pth', dataset='deepglobe', output_channels=7, split='train', net_type='deeplab', batch_size=1, shuffle=True)
+    # tester_deepglobe_no_pretrained_7_channels.make_demo_image()
 
-    # tester_pascal = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')
+    # tester_pascal = Tester(model_path='../model/pascal_deeplabv3p/model.pth', dataset='pascal')
     # tester_pascal.make_demo_image()
     # tester_pascal.infer_image_by_path(display=True, output_name='custom_output')
     # tester_pascal.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg', display=True, output_name='pascal_custom_output')
-    # tester_pascal.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2009_004857.jpg', display=True, output_name='pascal_custom_output')
+    # tester_pascal.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2009_004857.jpg', display=True, output_name='pascal_custom_output_scratch')
+    print('[Tester] Tests done.')
 
+    # input_img = Image.open('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/SegmentationClass/96841.png')
+    # input_img = input_img.convert('P', palette=Image.ADAPTIVE, colors=256)
+    # input_img.show()

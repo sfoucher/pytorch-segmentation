@@ -68,7 +68,6 @@ class DeepGlobeDataset(Dataset):
 
     def __getitem__(self, index):
         img_path = self.img_paths[index]
-        # print('[DeepGlobe dataset] selecting image '+str(img_path)+'.')
         img = np.array(Image.open(img_path))
         if self.split == 'test':
             # Resize (Scale & Pad & Crop)
