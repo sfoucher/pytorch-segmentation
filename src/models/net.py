@@ -82,6 +82,7 @@ class EncoderDecoderNet(nn.Module, SegmentatorTTA):
 class SPPNet(nn.Module, SegmentatorTTA):
     def __init__(self, output_channels=19, enc_type='xception65', dec_type='aspp', output_stride=8):
         super().__init__()
+        print('[DEBUG] Creating SPPNet with params output_channels = '+str(output_channels))
         self.output_channels = output_channels
         self.enc_type = enc_type
         self.dec_type = dec_type

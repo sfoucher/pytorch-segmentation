@@ -18,7 +18,7 @@ from logger.plot import history_ploter
 from utils.optimizer import create_optimizer
 from utils.metrics import compute_iou_batch
 
-
+# Parse YAML
 parser = argparse.ArgumentParser()
 parser.add_argument('config_path')
 args = parser.parse_args()
@@ -32,16 +32,18 @@ opt_config = config['Optimizer']
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 t_max = opt_config['t_max']
 
+# Collect training parameters
 max_epoch = train_config['max_epoch']
 batch_size = train_config['batch_size']
 fp16 = train_config['fp16']
 resume = train_config['resume']
 pretrained_path = train_config['pretrained_path']
+freeze_enabled = train_config['freeze']
+seed_enabled = train_config['seed']
 
 #########################################
 # Deterministic training
-fix_seed = False
-if fix_seed:
+if seed_enabled:
     seed = 100
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -132,13 +134,11 @@ if pretrained_path:
     del param
 
     #########################################
-    freeze = False
-    if freeze:
+    if freeze_enabled:
         # Code de Rémi
         # Freeze layers
         for param_index in range(int((len(optimizer.param_groups[0]['params'])) * 0.5)):
             optimizer.param_groups[0]['params'][param_index].requires_grad = False
-        print('The first half of parameters were frozen')
     #########################################
 
 # fp16
