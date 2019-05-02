@@ -87,7 +87,8 @@ class DeepGlobeDataset(Dataset):
 
             inter_img = Image.open(lbl_path)
             # Convert the RGB images to the P mode in PIL
-            inter_img = inter_img.convert('P', palette=Image.ADAPTIVE, colors=256)
+            # inter_img = inter_img.convert('P', palette=Image.ADAPTIVE, colors=256) C'EST DE LA MERDE
+            inter_img = inter_img.convert('P', palette=Image.WEB)
             lbl = np.array(inter_img)
 
             lbl[lbl == 255] = 0

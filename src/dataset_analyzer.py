@@ -1,5 +1,7 @@
 from dataset.deepglobe import DeepGlobeDataset
 from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class DatasetAnalyzer:
@@ -7,9 +9,10 @@ class DatasetAnalyzer:
         self.dataset_train = DeepGlobeDataset(net_type='deeplab', split='train')
         self.dataset_valid = DeepGlobeDataset(net_type='deeplab', split='valid')
 
-        # Valid : {0: 92462, 1: 72141, 2: 37320, 3: 21104, 4: 4301, 5: 166}
-        # Train : {3: 131890, 1: 631000, 0: 734071, 4: 32710, 5: 5585, 2: 244566, 6: 171}
-        self.number_of_pixels_dict = {3: 131890, 1: 631000, 0: 734071, 4: 32710, 5: 5585, 2: 244566, 6: 171}
+        self.number_of_pixels_dict = {}
+
+        # Valid : {45: 126090, 195: 21857, 190: 7402, 220: 18650, 225: 23158, 40: 30291, 0: 45}
+        # Train : {45: 1033012, 190: 59065, 220: 198381, 195: 148438, 0: 965, 225: 146374, 40: 193758}
 
     def get_nb_train_images(self):
         return self.dataset_train.__len__()
@@ -17,16 +20,46 @@ class DatasetAnalyzer:
     def get_nb_valid_images(self):
         return self.dataset_valid.__len__()
 
-    def print_mask_colors_ratio(self):
+    def make_pie_chart(self):
+        colors = []
+        ratios = []
+        total_nb_pixels = 0
+        for val in self.number_of_pixels_dict:
+            colors.append(val)
+            total_nb_pixels += self.number_of_pixels_dict[val]
+        for val in self.number_of_pixels_dict:
+            ratios.append(float(self.number_of_pixels_dict[val]) / float(total_nb_pixels))
+
+        def func(pct):
+            return "{:.1f}%".format(pct)
+
+        fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"))
+
+        wedges, texts, autotexts = ax.pie(ratios, autopct=lambda pct: func(pct),
+                                          textprops=dict(color="w"))
+
+        ax.legend(wedges, colors,
+                  title="Ingredients",
+                  loc="center left",
+                  bbox_to_anchor=(1, 0, 0.5, 1))
+
+        plt.setp(autotexts, size=8, weight="bold")
+
+        ax.set_title("Matplotlib bakery: A pie")
+
+        plt.savefig('pie.png')
+        plt.show()
+
+    def compute_mask_colors_ratio(self):
         label_values = []
         self.number_of_pixels_dict = {}
         img_index = 0
-        for input_img_path in self.dataset_train.lbl_paths:
+        for input_img_path in self.dataset_train.lbl_paths:  # !!!
             img_index += 1
             print('[Dataset analyzer] [Colors ratio] Analyzing image '+str(img_index)+' of '+str(self.get_nb_train_images())+' ('+str(input_img_path)+')')
             input_img = Image.open(input_img_path)
             # Reduce mask size to speed up the process
-            input_img = input_img.convert('P', palette=Image.ADAPTIVE, colors=256)
+            input_img = input_img.convert('P', palette=Image.WEB)
             input_img.thumbnail((50, 50), Image.ANTIALIAS)
             for val in input_img.getdata():
                 if val not in label_values:
@@ -48,4 +81,5 @@ if __name__ == '__main__':
     dataset = DatasetAnalyzer()
     print('[Dataset analyzer] Number of train images : '+str(dataset.get_nb_train_images()))
     print('[Dataset analyzer] Number of validation images : '+str(dataset.get_nb_valid_images()))
-    dataset.print_mask_colors_ratio()
+    dataset.compute_mask_colors_ratio()
+    # dataset.make_pie_chart()
