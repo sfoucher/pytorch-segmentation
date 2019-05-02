@@ -11,7 +11,7 @@ Train:
   batch_size: 2
   fp16: True
   resume: False
-  pretrained_path: ''
+  pretrained_path: '../model/cityscapes_deeplab_v3_plus/model.pth'
   freeze: False
   seed: False
 Loss:
