@@ -185,7 +185,11 @@ for i_epoch in range(start_epoch, max_epoch):
             if net_type == 'deeplab':
                 preds = F.interpolate(preds, size=labels.shape[1:], mode='bilinear', align_corners=True)
             if fp16:
+                # Prints to debug loss
+                # print("preds.float() : "+str(preds.float()))
+                # print("labels : "+str(labels))
                 loss = loss_fn(preds.float(), labels)
+                # print("loss : " + str(loss))
             else:
                 loss = loss_fn(preds, labels)
 

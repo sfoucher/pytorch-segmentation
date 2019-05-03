@@ -68,6 +68,7 @@ class DeepGlobeDataset(Dataset):
 
     def __getitem__(self, index):
         img_path = self.img_paths[index]
+        print(str(img_path))
         img = np.array(Image.open(img_path))
         if self.split == 'test':
             # Resize (Scale & Pad & Crop)
@@ -89,6 +90,29 @@ class DeepGlobeDataset(Dataset):
             # Convert the RGB images to the P mode in PIL
             # inter_img = inter_img.convert('P', palette=Image.ADAPTIVE, colors=256) C'EST DE LA MERDE
             inter_img = inter_img.convert('P', palette=Image.WEB)
+
+            # Then I need to convert these values to a scale of 1..7
+            pixels = inter_img.load()  # create the pixel map
+            for i_index in range(inter_img.size[0]):
+                for j_index in range(inter_img.size[1]):
+                    if pixels[i_index, j_index] == 0:      # BLACK
+                        pixels[i_index, j_index] = 1       # Unknown
+                    elif pixels[i_index, j_index] == 40:   # GREEN
+                        pixels[i_index, j_index] = 2       # Forest land
+                    elif pixels[i_index, j_index] == 45:   # YELLOW
+                        pixels[i_index, j_index] = 3       # Agriculture land
+                    elif pixels[i_index, j_index] == 190:  # BLUE
+                        pixels[i_index, j_index] = 4       # Water
+                    elif pixels[i_index, j_index] == 195:  # MAGENTA
+                        pixels[i_index, j_index] = 5       # Rangeland
+                    elif pixels[i_index, j_index] == 220:  # CYAN
+                        pixels[i_index, j_index] = 6       # Urban land
+                    elif pixels[i_index, j_index] == 225:  # WHITE
+                        pixels[i_index, j_index] = 7       # Barren land
+                    else:
+                        print("[ERROR] Unknown color in label")
+                        exit(-1)
+
             lbl = np.array(inter_img)
 
             lbl[lbl == 255] = 0

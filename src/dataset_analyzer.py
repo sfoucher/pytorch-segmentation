@@ -9,7 +9,7 @@ class DatasetAnalyzer:
         self.dataset_train = DeepGlobeDataset(net_type='deeplab', split='train')
         self.dataset_valid = DeepGlobeDataset(net_type='deeplab', split='valid')
 
-        self.number_of_pixels_dict = {}
+        self.number_of_pixels_dict = {45: 1033012, 190: 59065, 220: 198381, 195: 148438, 0: 965, 225: 146374, 40: 193758}
 
         # Valid : {45: 126090, 195: 21857, 190: 7402, 220: 18650, 225: 23158, 40: 30291, 0: 45}
         # Train : {45: 1033012, 190: 59065, 220: 198381, 195: 148438, 0: 965, 225: 146374, 40: 193758}
@@ -25,7 +25,23 @@ class DatasetAnalyzer:
         ratios = []
         total_nb_pixels = 0
         for val in self.number_of_pixels_dict:
-            colors.append(val)
+            if val == 0:
+                colors.append("Unknown")
+            elif val == 40:
+                colors.append("Forest")
+            elif val == 45:
+                colors.append("Agriculture land")
+            elif val == 190:
+                colors.append("Water")
+            elif val == 195:
+                colors.append("Rangeland")
+            elif val == 220:
+                colors.append("Urban land")
+            elif val == 225:
+                colors.append("Barren land")
+            else:
+                print("[ERROR] Unknown color "+str(val))
+                exit(-1)
             total_nb_pixels += self.number_of_pixels_dict[val]
         for val in self.number_of_pixels_dict:
             ratios.append(float(self.number_of_pixels_dict[val]) / float(total_nb_pixels))
@@ -39,13 +55,13 @@ class DatasetAnalyzer:
                                           textprops=dict(color="w"))
 
         ax.legend(wedges, colors,
-                  title="Ingredients",
+                  title="Legend",
                   loc="center left",
                   bbox_to_anchor=(1, 0, 0.5, 1))
 
         plt.setp(autotexts, size=8, weight="bold")
 
-        ax.set_title("Matplotlib bakery: A pie")
+        ax.set_title("Segmentation class repartition")
 
         plt.savefig('pie.png')
         plt.show()
@@ -81,5 +97,5 @@ if __name__ == '__main__':
     dataset = DatasetAnalyzer()
     print('[Dataset analyzer] Number of train images : '+str(dataset.get_nb_train_images()))
     print('[Dataset analyzer] Number of validation images : '+str(dataset.get_nb_valid_images()))
-    dataset.compute_mask_colors_ratio()
-    # dataset.make_pie_chart()
+    # dataset.compute_mask_colors_ratio()
+    dataset.make_pie_chart()

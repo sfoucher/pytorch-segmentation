@@ -11,6 +11,8 @@ Train:
   fp16: True
   resume: False
   pretrained_path: '../model/cityscapes_deeplab_v3_plus/model.pth'
+  freeze: False
+  seed: False
 Loss:
   loss_type: 'Lovasz'
   ignore_index: 255
