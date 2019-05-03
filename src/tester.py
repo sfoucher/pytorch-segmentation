@@ -26,7 +26,7 @@ class Tester:
         """
 
         print('[Tester] [Init] Initializing tester...')
-
+        self.dataset = dataset
         self.model_path = model_path
 
         # Load model
@@ -127,6 +127,10 @@ class Tester:
         :param image_path: Path of input images
         :return: null
         """
+        if not self.dataset == 'deepglobe':
+            print('[ERROR] Inference script only available for the Deepglobe dataset.')
+            exit(-1)
+
         print('[Tester] [Single test] Opening image '+image_path+'...')
         # Open and prepare image
         input_img = Image.open(image_path)
@@ -176,6 +180,10 @@ class Tester:
         :param image_path: Path of input images
         :return: null
         """
+        if not self.dataset == 'deepglobe':
+            print('[ERROR] Inference script only available for the Deepglobe dataset.')
+            exit(-1)
+
         print('[Tester] [Single test] Opening image ' + image_name + '...')
         # Open and prepare image
         input_img = Image.open('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/'+image_name+'.jpg')
@@ -253,14 +261,10 @@ if __name__ == '__main__':
     print('[Tester] Launching tests.')
     tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe', output_channels=19, split='train', net_type='deeplab', batch_size=1, shuffle=True)
     # tester_deepglobe.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/255876.jpg', display=True, output_name='custom_output')
-    # tester_deepglobe.infer_image_by_name(image_name="782103")
-    tester_deepglobe.make_demo_image()
+    tester_deepglobe.infer_image_by_name(image_name="782103")
+    # tester_deepglobe.make_demo_image()
 
-    # tester_deepglobe_no_pretrained_7_channels = Tester(model_path='../model/deepglobe_deeplabv3_no_pretrained_7_channels/model.pth', dataset='deepglobe', output_channels=7, split='train', net_type='deeplab', batch_size=1, shuffle=True)
-    # tester_deepglobe_no_pretrained_7_channels.make_demo_image()
-    # tester_deepglobe_no_pretrained_7_channels.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/330838.jpg', display=True, output_name='custom_output')
-
-    # tester_pascal = Tester(model_path='../model/pascal_deeplabv3p/model.pth', dataset='pascal')
+    # tester_pascal = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')
     # tester_pascal.make_demo_image()
     # tester_pascal.infer_image_by_path(display=True, output_name='custom_output')
     # tester_pascal.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg', display=True, output_name='pascal_custom_output')
