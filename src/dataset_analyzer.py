@@ -1,6 +1,6 @@
 from dataset.deepglobe import DeepGlobeDataset
 from PIL import Image
-import numpy as np
+from utils.constants import color_correspondences
 import matplotlib.pyplot as plt
 
 
@@ -25,20 +25,20 @@ class DatasetAnalyzer:
         ratios = []
         total_nb_pixels = 0
         for val in self.number_of_pixels_dict:
-            if val == 0:
-                colors.append("Unknown")
-            elif val == 40:
-                colors.append("Forest")
-            elif val == 45:
-                colors.append("Agriculture land")
-            elif val == 190:
-                colors.append("Water")
-            elif val == 195:
-                colors.append("Rangeland")
-            elif val == 220:
-                colors.append("Urban land")
-            elif val == 225:
-                colors.append("Barren land")
+            if val == color_correspondences['black']['web-palette']:
+                colors.append(color_correspondences['black']['description'])
+            elif val == color_correspondences['green']['web-palette']:
+                colors.append(color_correspondences['green']['description'])
+            elif val == color_correspondences['yellow']['web-palette']:
+                colors.append(color_correspondences['yellow']['description'])
+            elif val == color_correspondences['blue']['web-palette']:
+                colors.append(color_correspondences['blue']['description'])
+            elif val == color_correspondences['cyan']['web-palette']:
+                colors.append(color_correspondences['cyan']['description'])
+            elif val == color_correspondences['magenta']['web-palette']:
+                colors.append(color_correspondences['magenta']['description'])
+            elif val == color_correspondences['white']['web-palette']:
+                colors.append(color_correspondences['white']['description'])
             else:
                 print("[ERROR] Unknown color "+str(val))
                 exit(-1)

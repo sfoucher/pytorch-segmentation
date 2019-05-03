@@ -7,7 +7,8 @@ from dataset.cityscapes import CityscapesDataset
 from dataset.pascal_voc import PascalVocDataset
 from dataset.deepglobe import DeepGlobeDataset
 from utils.preprocess import minmax_normalize
-from utils.constants import web_palette_values
+
+import matplotlib.pyplot as plt
 
 
 class Tester:
@@ -49,11 +50,71 @@ class Tester:
 
         self.valid_loader = DataLoader(self.valid_dataset, batch_size=batch_size, shuffle=shuffle)
 
-        self.web_palette = web_palette_values
-
-
         print('[Tester] [Init] ...done!')
         print('[Tester] [Init] Tester created.')
+
+    def make_demo_image(self):
+        """
+        Picks 4 images from dataset randomly and creates image with raw, inferred and label pictures.
+        :return: null
+        """
+        images_list = []
+        labels_list = []
+        preds_list = []
+
+        print('[Tester] [Demo] Gathering images and inferring...')
+        self.model.eval()
+        with torch.no_grad():
+            for batched in self.valid_loader:
+                images, labels = batched
+                images_np = images.numpy().transpose(0, 2, 3, 1)
+                labels_np = labels.numpy()
+
+                images, labels = images.to(self.device), labels.to(self.device)
+                preds = self.model.tta(images, net_type='deeplab')
+                preds = preds.argmax(dim=1)
+                preds_np = preds.detach().cpu().numpy()
+
+                images_list.append(images_np)
+                labels_list.append(labels_np)
+                preds_list.append(preds_np)
+
+                if len(images_list) == 4:
+                    break
+
+        print('[Tester] [Demo] Processing results...')
+
+        images = np.concatenate(images_list)
+        labels = np.concatenate(labels_list)
+        preds = np.concatenate(preds_list)
+
+        # Ignore index
+        ignore_pixel = labels == 255
+        preds[ignore_pixel] = 0
+        labels[ignore_pixel] = 0
+
+        # Plot
+        fig, axes = plt.subplots(4, 3, figsize=(12, 10))
+        plt.tight_layout()
+
+        axes[0, 0].set_title('input image')
+        axes[0, 1].set_title('prediction')
+        axes[0, 2].set_title('ground truth')
+
+        for ax, img, lbl, pred in zip(axes, images, labels, preds):
+            ax[0].imshow(minmax_normalize(img, norm_range=(0, 1), orig_range=(-1, 1)))
+            ax[1].imshow(pred)
+            ax[2].imshow(lbl)
+            ax[0].set_xticks([])
+            ax[0].set_yticks([])
+            ax[1].set_xticks([])
+            ax[1].set_yticks([])
+            ax[2].set_xticks([])
+            ax[2].set_yticks([])
+
+        plt.savefig('eval.png')
+        plt.show()
+        plt.close()
 
     def infer_image_by_path(self,
                             image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/test1.jpg',
@@ -90,38 +151,13 @@ class Tester:
 
         good_preds = preds_np[0]
         good_mask = Image.fromarray(good_preds.astype('uint8'), 'P')
-        pixels = good_mask.load()  # create the pixel map
 
-        for i_index in range(good_mask.size[0]):
-            for j_index in range(good_mask.size[1]):
-                if pixels[i_index, j_index] == 1:  # BLACK
-                    # pixels[i_index, j_index] = 0  # Unknown
-                    good_mask.putpixel((i_index, j_index), 0)
-                elif pixels[i_index, j_index] == 2:  # GREEN
-                    # pixels[i_index, j_index] = 40  # Forest land
-                    good_mask.putpixel((i_index, j_index), 40)
-                elif pixels[i_index, j_index] == 3:  # YELLOW
-                    # pixels[i_index, j_index] = 45  # Agriculture land
-                    good_mask.putpixel((i_index, j_index), 45)
-                elif pixels[i_index, j_index] == 4:  # BLUE
-                    # pixels[i_index, j_index] = 190  # Water
-                    good_mask.putpixel((i_index, j_index), 190)
-                elif pixels[i_index, j_index] == 5:  # MAGENTA
-                    # pixels[i_index, j_index] = 195  # Rangeland
-                    good_mask.putpixel((i_index, j_index), 195)
-                elif pixels[i_index, j_index] == 6:  # CYAN
-                    # pixels[i_index, j_index] = 220  # Urban land
-                    good_mask.putpixel((i_index, j_index), 220)
-                elif pixels[i_index, j_index] == 7:  # WHITE
-                    # pixels[i_index, j_index] = 225  # Barren land
-                    good_mask.putpixel((i_index, j_index), 225)
-                else:
-                    print("[ERROR] Unknown color " + str(pixels[i_index, j_index]))
-                    exit(-1)
+        # Transform mask to set good indexes and palette
+        good_mask = DeepGlobeDataset.index_to_palette(good_mask)
 
-        good_mask.putpalette(self.web_palette)
         if display:
             good_mask.show()
+        good_mask.save(output_name+'_prediction.png')
 
         overlay = Tester.make_overlay(good_mask, input_img, 100)
         if display:
@@ -148,7 +184,7 @@ class Tester:
 
         label = Image.open('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/SegmentationClass/' + image_name + '.png')
         label = label.convert('P', palette=Image.WEB)
-        # web_palette = label.getpalette()  # is equal to self.web_palette
+
         if display:
             label.show(title='Ground truth')
 
@@ -170,39 +206,13 @@ class Tester:
 
         good_preds = preds_np[0]
         good_mask = Image.fromarray(good_preds.astype('uint8'), 'P')
-        pixels = good_mask.load()  # create the pixel map
 
-        for i_index in range(good_mask.size[0]):
-            for j_index in range(good_mask.size[1]):
-                if pixels[i_index, j_index] == 1:  # BLACK
-                    # pixels[i_index, j_index] = 0  # Unknown
-                    good_mask.putpixel((i_index, j_index), 0)
-                elif pixels[i_index, j_index] == 2:  # GREEN
-                    # pixels[i_index, j_index] = 40  # Forest land
-                    good_mask.putpixel((i_index, j_index), 40)
-                elif pixels[i_index, j_index] == 3:  # YELLOW
-                    # pixels[i_index, j_index] = 45  # Agriculture land
-                    good_mask.putpixel((i_index, j_index), 45)
-                elif pixels[i_index, j_index] == 4:  # BLUE
-                    # pixels[i_index, j_index] = 190  # Water
-                    good_mask.putpixel((i_index, j_index), 190)
-                elif pixels[i_index, j_index] == 5:  # MAGENTA
-                    # pixels[i_index, j_index] = 195  # Rangeland
-                    good_mask.putpixel((i_index, j_index), 195)
-                elif pixels[i_index, j_index] == 6:  # CYAN
-                    # pixels[i_index, j_index] = 220  # Urban land
-                    good_mask.putpixel((i_index, j_index), 220)
-                elif pixels[i_index, j_index] == 7:  # WHITE
-                    # pixels[i_index, j_index] = 225  # Barren land
-                    good_mask.putpixel((i_index, j_index), 225)
-                else:
-                    print("[ERROR] Unknown color "+str(pixels[i_index, j_index]))
-                    exit(-1)
-
-        good_mask.putpalette(self.web_palette)
+        # Transform mask to set good indexes and palette
+        good_mask = DeepGlobeDataset.index_to_palette(good_mask)
 
         if display:
             good_mask.show(title='Prediction')
+        good_mask.save(output_name + '_prediction.png')
 
         overlay = Tester.make_overlay(good_mask, input_img, 100)
         if display:
@@ -242,8 +252,9 @@ class Tester:
 if __name__ == '__main__':
     print('[Tester] Launching tests.')
     tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe', output_channels=19, split='train', net_type='deeplab', batch_size=1, shuffle=True)
-    tester_deepglobe.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/255876.jpg', display=True, output_name='custom_output')
+    # tester_deepglobe.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/255876.jpg', display=True, output_name='custom_output')
     # tester_deepglobe.infer_image_by_name(image_name="782103")
+    tester_deepglobe.make_demo_image()
 
     # tester_deepglobe_no_pretrained_7_channels = Tester(model_path='../model/deepglobe_deeplabv3_no_pretrained_7_channels/model.pth', dataset='deepglobe', output_channels=7, split='train', net_type='deeplab', batch_size=1, shuffle=True)
     # tester_deepglobe_no_pretrained_7_channels.make_demo_image()
@@ -255,21 +266,4 @@ if __name__ == '__main__':
     # tester_pascal.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2011_003942.jpg', display=True, output_name='pascal_custom_output')
     # tester_pascal.infer_image_by_path(image_path='/home/ubuntu/data/Segmentation/pytorch-segmentation/data/pascal_voc_2012/VOCdevkit/VOC2012/JPEGImages/2009_004857.jpg', display=True, output_name='pascal_custom_output_scratch')
     print('[Tester] Tests done.')
-
-    ##################
-    # MESSING AROUND #
-    ##################
-
-    """
-    input_img = Image.open('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/SegmentationClass/96870.png')
-    input_img = input_img.convert('P', palette=Image.WEB)
-    input_img.thumbnail((50, 50), Image.ANTIALIAS)
-
-    pixels = input_img.load()  # create the pixel map
-    for i in range(input_img.size[1]):
-        for j in range(input_img.size[0]):
-            pixels[i, j] = 225
-
-    input_img.show()
-    """
 

@@ -1,4 +1,3 @@
-from functools import partial
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -9,6 +8,8 @@ from torch.utils.data import DataLoader, Dataset
 
 from utils.preprocess import minmax_normalize, meanstd_normalize
 from utils.custum_aug import PadIfNeededRightBottom
+
+from utils.constants import color_correspondences, web_palette_values
 
 
 class DeepGlobeDataset(Dataset):
@@ -68,7 +69,6 @@ class DeepGlobeDataset(Dataset):
 
     def __getitem__(self, index):
         img_path = self.img_paths[index]
-        print(str(img_path))
         img = np.array(Image.open(img_path))
         if self.split == 'test':
             # Resize (Scale & Pad & Crop)
@@ -91,27 +91,7 @@ class DeepGlobeDataset(Dataset):
             # inter_img = inter_img.convert('P', palette=Image.ADAPTIVE, colors=256) C'EST DE LA MERDE
             inter_img = inter_img.convert('P', palette=Image.WEB)
 
-            # Then I need to convert these values to a scale of 1..7
-            pixels = inter_img.load()  # create the pixel map
-            for i_index in range(inter_img.size[0]):
-                for j_index in range(inter_img.size[1]):
-                    if pixels[i_index, j_index] == 0:      # BLACK
-                        pixels[i_index, j_index] = 1       # Unknown
-                    elif pixels[i_index, j_index] == 40:   # GREEN
-                        pixels[i_index, j_index] = 2       # Forest land
-                    elif pixels[i_index, j_index] == 45:   # YELLOW
-                        pixels[i_index, j_index] = 3       # Agriculture land
-                    elif pixels[i_index, j_index] == 190:  # BLUE
-                        pixels[i_index, j_index] = 4       # Water
-                    elif pixels[i_index, j_index] == 195:  # MAGENTA
-                        pixels[i_index, j_index] = 5       # Rangeland
-                    elif pixels[i_index, j_index] == 220:  # CYAN
-                        pixels[i_index, j_index] = 6       # Urban land
-                    elif pixels[i_index, j_index] == 225:  # WHITE
-                        pixels[i_index, j_index] = 7       # Barren land
-                    else:
-                        print("[ERROR] Unknown color in label")
-                        exit(-1)
+            self.palette_to_indexes(inter_img)
 
             lbl = np.array(inter_img)
 
@@ -143,6 +123,61 @@ class DeepGlobeDataset(Dataset):
                 img = torch.FloatTensor(img)
                 lbl = torch.LongTensor(lbl)
             return img, lbl
+
+    @staticmethod
+    def index_to_palette(pil_image):
+        pixels = pil_image.load()  # create the pixel map
+
+        for i_index in range(pil_image.size[0]):
+            for j_index in range(pil_image.size[1]):
+                if pixels[i_index, j_index] == color_correspondences['black']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['black']['web-palette'])
+                elif pixels[i_index, j_index] == color_correspondences['green']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['green']['web-palette'])
+                elif pixels[i_index, j_index] == color_correspondences['yellow']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['yellow']['web-palette'])
+                elif pixels[i_index, j_index] == color_correspondences['blue']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['blue']['web-palette'])
+                elif pixels[i_index, j_index] == color_correspondences['magenta']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['magenta']['web-palette'])
+                elif pixels[i_index, j_index] == color_correspondences['cyan']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['cyan']['web-palette'])
+                elif pixels[i_index, j_index] == color_correspondences['white']['index']:
+                    pil_image.putpixel((i_index, j_index), color_correspondences['white']['web-palette'])
+                else:
+                    print("[ERROR] Unknown color " + str(pixels[i_index, j_index]))
+                    exit(-1)
+
+        pil_image.putpalette(web_palette_values)
+
+        return pil_image
+
+    @staticmethod
+    def palette_to_indexes(pil_image):
+        # Then I need to convert these values to a scale of 1..7
+        pixels = pil_image.load()  # create the pixel map
+
+        for i_index in range(pil_image.size[0]):
+            for j_index in range(pil_image.size[1]):
+                if pixels[i_index, j_index] == color_correspondences['black']['web-palette']:  # BLACK
+                    pixels[i_index, j_index] = color_correspondences['black']['index']  # Unknown
+                elif pixels[i_index, j_index] == color_correspondences['green']['web-palette']:  # GREEN
+                    pixels[i_index, j_index] = color_correspondences['green']['index']  # Forest land
+                elif pixels[i_index, j_index] == color_correspondences['yellow']['web-palette']:  # YELLOW
+                    pixels[i_index, j_index] = color_correspondences['yellow']['index']  # Agriculture land
+                elif pixels[i_index, j_index] == color_correspondences['blue']['web-palette']:  # BLUE
+                    pixels[i_index, j_index] = color_correspondences['blue']['index']  # Water
+                elif pixels[i_index, j_index] == color_correspondences['magenta']['web-palette']:  # MAGENTA
+                    pixels[i_index, j_index] = color_correspondences['magenta']['index']  # Rangeland
+                elif pixels[i_index, j_index] == color_correspondences['cyan']['web-palette']:  # CYAN
+                    pixels[i_index, j_index] = color_correspondences['cyan']['index']  # Urban land
+                elif pixels[i_index, j_index] == color_correspondences['white']['web-palette']:  # WHITE
+                    pixels[i_index, j_index] = color_correspondences['white']['index']  # Barren land
+                else:
+                    print("[ERROR] Unknown color in label")
+                    exit(-1)
+
+        return pil_image
 
 
 if __name__ == '__main__':
