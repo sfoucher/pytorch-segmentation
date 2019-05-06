@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 class Tester:
-    def __init__(self, model_path='../model/deepglobe_deeplabv3/model_tmp.pth', dataset='deepglobe',
+    def __init__(self, model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe',
                  output_channels=19, split='valid', net_type='deeplab', batch_size=1, shuffle=True):
         """
         Initializes the tester by loading the model with the good parameters.
