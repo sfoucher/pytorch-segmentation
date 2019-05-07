@@ -32,13 +32,13 @@ class ScoreCalculator:
         # Create data loader depending on dataset, split and net type
         if dataset == 'pascal':
             self.valid_dataset = PascalVocDataset(split=split, net_type=net_type)
-            self.classes = np.arange(1, 21)
+            self.classes = np.arange(1, 22)
         elif dataset == 'cityscapes':
             self.valid_dataset = CityscapesDataset(split=split, net_type=net_type)
-            self.classes = np.arange(1, 19)
+            self.classes = np.arange(1, 20)
         elif dataset == 'deepglobe':
             self.valid_dataset = DeepGlobeDataset(split=split, net_type=net_type)
-            self.classes = np.arange(1, 7)
+            self.classes = np.arange(1, 8)
         else:
             raise NotImplementedError
 
@@ -53,64 +53,6 @@ class ScoreCalculator:
         print('[Score Calculator] ...done!')
         print('[Score Calculator] Calculator created.')
 
-    @staticmethod
-    def lovasz_grad(gt_sorted):
-        """
-        Computes gradient of the Lovasz extension w.r.t sorted errors
-        See Alg. 1 in paper
-        """
-        p = len(gt_sorted)
-        gts = gt_sorted.sum()
-        intersection = gts - gt_sorted.float().cumsum(0)
-        union = gts + (1 - gt_sorted).float().cumsum(0)
-        jaccard = 1 - intersection / union
-        if p > 1:  # cover 1-pixel case
-            jaccard[1:p] = jaccard[1:p] - jaccard[0:-1]
-        return jaccard
-
-    @staticmethod
-    def lovasz_softmax(logits, labels):
-        probas = F.softmax(logits, dim=1)
-        total_loss = 0
-        batch_size = logits.shape[0]
-        for prb, lbl in zip(probas, labels):
-            total_loss += ScoreCalculator.lovasz_softmax_flat(prb, lbl, ignore_index=None, only_present=True)
-        return total_loss / batch_size
-
-    @staticmethod
-    def lovasz_softmax_flat(prb, lbl, ignore_index, only_present):
-        """
-        Multi-class Lovasz-Softmax loss
-          prb: [P, C] Variable, class probabilities at each prediction (between 0 and 1)
-          lbl: [P] Tensor, ground truth labels (between 0 and C - 1)
-          ignore_index: void class labels
-          only_present: average only on classes present in ground truth
-        """
-        C = prb.shape[0]
-        prb = prb.permute(1, 2, 0).contiguous().view(-1, C)  # H * W, C
-        lbl = lbl.view(-1)  # H * W
-        if ignore_index is not None:
-            mask = lbl != ignore_index
-            if mask.sum() == 0:
-                return torch.mean(prb * 0)
-            prb = prb[mask]
-            lbl = lbl[mask]
-
-        total_loss = 0
-        cnt = 0
-        for c in range(C):
-            fg = (lbl == c).float()  # foreground for class c
-            if only_present and fg.sum() == 0:
-                continue
-            errors = (fg - prb[:, c]).abs()
-            errors_sorted, perm = torch.sort(errors, dim=0, descending=True)
-            perm = perm.data
-            fg_sorted = fg[perm]
-            total_loss += torch.dot(errors_sorted, ScoreCalculator.lovasz_grad(fg_sorted))
-            cnt += 1
-        # Change this line to fix a crash that occurs when cnt is 0
-        # return total_loss / cnt
-        return total_loss if cnt == 0 else total_loss / cnt
 
     @staticmethod
     def compute_ious(pred, label, classes, ignore_index=255, only_present=True):
@@ -135,8 +77,8 @@ class ScoreCalculator:
         return iou
 
     def compute_valid_loss_and_iou(self):
-        valid_losses = []
         valid_ious = []
+        ious_by_class = []
         self.model.eval()
         with torch.no_grad():
             with tqdm(self.valid_loader) as _tqdm:
@@ -146,10 +88,6 @@ class ScoreCalculator:
                         images = images.half()
                     images, labels = images.to(self.device), labels.to(self.device)
                     preds = self.model.tta(images, net_type=self.net_type)
-                    if self.fp16:
-                        loss = ScoreCalculator.lovasz_softmax(preds.float(), labels)
-                    else:
-                        loss = ScoreCalculator.lovasz_softmax(preds, labels)
 
                     preds_np = preds.detach().cpu().numpy()
                     labels_np = labels.detach().cpu().numpy()
@@ -157,14 +95,26 @@ class ScoreCalculator:
                     # I changed a parameter in the compute_iou method to prevent it from yielding nans
                     iou = ScoreCalculator.compute_iou_batch(np.argmax(preds_np, axis=1), labels_np, self.classes)
 
-                    _tqdm.set_postfix(OrderedDict(seg_loss=f'{loss.item():.5f}', iou=f'{iou:.3f}'))
-                    valid_losses.append(loss.item())
+                    ious_by_class.append(ScoreCalculator.compute_ious(np.argmax(preds_np, axis=1), labels_np, self.classes))
+
+                    _tqdm.set_postfix(OrderedDict(iou=f'{iou:.3f}'))
                     valid_ious.append(iou)
 
-        valid_loss = np.mean(valid_losses)
+        # Compute mean ious by class
+        iou_means_by_class = []
+        if ious_by_class[0]:
+            for i in range(len(ious_by_class[0])):
+                val = 0.0
+                num_val = 0.0
+                for image in range(len(ious_by_class)):
+                    if not np.isnan(ious_by_class[image][i]):
+                        val += ious_by_class[image][i]
+                        num_val += 1.0
+                iou_means_by_class.append((val/num_val) if (num_val != 0.0) else 0.0)
+
         valid_iou = np.mean(valid_ious)
-        print(f'[Score Calculator] valid seg loss: {valid_loss}')
         print(f'[Score Calculator] valid iou: {valid_iou}')
+        print(f'[Score Calculator] iou means by class: {iou_means_by_class}')
 
 
 if __name__ == '__main__':
