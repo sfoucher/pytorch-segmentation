@@ -10,6 +10,8 @@ from utils.preprocess import minmax_normalize
 
 import matplotlib.pyplot as plt
 
+import copy
+
 
 class Tester:
     def __init__(self, model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe',
@@ -187,14 +189,15 @@ class Tester:
         print('[Tester] [Single test] Opening image ' + image_name + '...')
         # Open and prepare image
         input_img = Image.open('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/'+image_name+'.jpg')
-        if display:
-            input_img.show(title='Input raw image')
-
         label = Image.open('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/SegmentationClass/' + image_name + '.png')
+        label_raw = copy.deepcopy(label)
+        overlay_ground_truth = Tester.make_overlay(label_raw, input_img, 100)
         label = label.convert('P', palette=Image.WEB)
 
         if display:
+            input_img.show(title='Input raw image')
             label.show(title='Ground truth')
+            overlay_ground_truth.show(title='Overlay_ground_truth')
 
         custom_img = np.array(input_img)
         custom_img = minmax_normalize(custom_img, norm_range=(-1, 1))
@@ -218,25 +221,28 @@ class Tester:
         # Transform mask to set good indexes and palette
         good_mask = DeepGlobeDataset.index_to_palette(good_mask)
 
-        if display:
-            good_mask.show(title='Prediction')
-        good_mask.save(output_name + '_prediction.png')
-
         overlay = Tester.make_overlay(good_mask, input_img, 100)
         if display:
-            overlay.show(title='Overlay bad colors')
+            good_mask.show(title='Prediction')
+            overlay.show(title='Overlay')
+
+        good_mask.save(output_name + '_prediction.png')
         overlay.save(output_name + '_overlay.png')
+        overlay_ground_truth.save(output_name + '_overlay_truth.png')
+
         print('[Tester] [Single test] Done.')
 
     @staticmethod
-    def make_overlay(pred, img, transparency):
+    def make_overlay(pred_in, img_in, transparency):
         """
         Build PIL image from input img and mask overlay with given transparency.
-        :param pred: mask input
-        :param img: img input
+        :param pred_in: mask input
+        :param img_in: img input
         :param transparency: transparency wanted between 0..255
         :return: PIL image result
         """
+        pred = copy.deepcopy(pred_in)
+        img = copy.deepcopy(img_in)
         print('[Tester] [Overlay] Building overlay...')
         if transparency < 0 or transparency > 255:
             print('ERROR : Transparency should be in range 0..255.')
@@ -261,7 +267,7 @@ if __name__ == '__main__':
     print('[Tester] Launching tests.')
     tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe', output_channels=19, split='train', net_type='deeplab', batch_size=1, shuffle=True)
     # tester_deepglobe.infer_image_by_path('/home/ubuntu/data/Segmentation/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/255876.jpg', display=True, output_name='custom_output')
-    tester_deepglobe.infer_image_by_name(image_name="782103")
+    tester_deepglobe.infer_image_by_name(image_name="255876", display=False)
     # tester_deepglobe.make_demo_image()
 
     # tester_pascal = Tester(model_path='../model/pascal_deeplabv3p_with_pretrained/model.pth', dataset='pascal')

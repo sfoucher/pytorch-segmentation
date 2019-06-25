@@ -16,7 +16,6 @@ Train:
   seed: False
 Loss:
   loss_type: 'Lovasz'
-  ignore_index: 255
 Optimizer:
   mode: 'sgd'
   base_lr: 0.007

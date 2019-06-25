@@ -4,6 +4,7 @@ from .focal_loss import FocalLoss
 from .lovasz_loss import LovaszSoftmax
 from .ohem_loss import OhemCrossEntropy2d
 from .softiou_loss import SoftIoULoss
+from .lovasz_loss_weighted import LovaszSoftmaxWeighted
 
 
 class MultiClassCriterion(nn.Module):
@@ -14,6 +15,8 @@ class MultiClassCriterion(nn.Module):
         elif loss_type == 'Focal':
             self.criterion = FocalLoss(**kwargs)
         elif loss_type == 'Lovasz':
+            self.criterion = LovaszSoftmax(**kwargs)
+        elif loss_type == 'WeightedLovasz':
             self.criterion = LovaszSoftmax(**kwargs)
         elif loss_type == 'OhemCrossEntropy':
             self.criterion = OhemCrossEntropy2d(**kwargs)

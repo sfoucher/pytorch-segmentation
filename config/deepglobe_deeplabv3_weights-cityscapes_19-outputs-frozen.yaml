@@ -1,0 +1,22 @@
+Net:
+  enc_type: 'xception65'
+  dec_type: 'aspp'
+  output_stride: 8
+  output_channels: 19
+Data:
+  dataset: 'deepglobe'
+  target_size: (512, 512)
+Train:
+  max_epoch: 100
+  batch_size: 2
+  fp16: True
+  resume: False
+  pretrained_path: '../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth'
+  freeze: True
+  seed: True
+Loss:
+  loss_type: 'Lovasz'
+Optimizer:
+  mode: 'sgd'
+  base_lr: 0.007
+  t_max: 30
