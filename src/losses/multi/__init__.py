@@ -17,7 +17,7 @@ class MultiClassCriterion(nn.Module):
         elif loss_type == 'Lovasz':
             self.criterion = LovaszSoftmax(**kwargs)
         elif loss_type == 'WeightedLovasz':
-            self.criterion = LovaszSoftmax(**kwargs)
+            self.criterion = LovaszSoftmaxWeighted(**kwargs)
         elif loss_type == 'OhemCrossEntropy':
             self.criterion = OhemCrossEntropy2d(**kwargs)
         elif loss_type == 'SoftIOU':

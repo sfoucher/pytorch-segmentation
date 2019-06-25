@@ -7,6 +7,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class_repartition = {
+    1: 0.002,
+    2: 0.109,
+    3: 0.58,
+    4: 0.033,
+    5: 0.083,
+    6: 0.111,
+    7: 0.082
+}
+
 
 def lovasz_grad(gt_sorted):
     """
@@ -44,14 +54,14 @@ def lovasz_softmax_flat(prb, lbl, ignore_index, only_present):
     total_loss = 0
     cnt = 0
     for c in range(C):
-        fg = (lbl == c).float()  # foreground for class c
+        fg = (lbl == (c+1)).float()  # foreground for class c
         if only_present and fg.sum() == 0:
             continue
-        errors = (fg - prb[:, c]).abs()
+        errors = (fg - prb[:, (c+1)]).abs()
         errors_sorted, perm = torch.sort(errors, dim=0, descending=True)
         perm = perm.data
         fg_sorted = fg[perm]
-        total_loss += torch.dot(errors_sorted, lovasz_grad(fg_sorted))
+        total_loss += torch.dot(torch.dot(errors_sorted, lovasz_grad(fg_sorted)), torch.tensor(class_repartition[(c+1)]))
         cnt += 1
     # Change this line to fix a crash that occurs when cnt is 0
     # return total_loss / cnt
