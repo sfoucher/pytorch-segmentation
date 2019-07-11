@@ -36,6 +36,9 @@ web_palette_values = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
+# I'm not very happy with this data structure, it should be change to allow access to all fields from any field
+# Like a list of structs, where several fields in the struct can act as a key (index, palette and color)
+# It would also make it easier to loop through
 color_correspondences = {
     'black': {'web-palette': 0, 'index': 1, 'description': 'Unknown'},
     'green': {'web-palette': 40, 'index': 2, 'description': 'Forest land'},

@@ -132,3 +132,5 @@ tf_model/*
 .idea/
 
 !.gitkeep
+
+valid_masks/

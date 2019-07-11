@@ -9,6 +9,8 @@ from collections import OrderedDict
 import numpy as np
 import torch.nn.functional as F
 
+from utils.constants import color_correspondences
+
 from PIL import Image
 import copy
 
@@ -40,7 +42,7 @@ class ScoreCalculator:
             self.classes = np.arange(1, 20)
         elif dataset == 'deepglobe':
             self.valid_dataset = DeepGlobeDataset(split=split, net_type=net_type)
-            self.classes = np.arange(0, 20)
+            self.classes = np.arange(1, 8)
         else:
             raise NotImplementedError
 
@@ -113,13 +115,8 @@ class ScoreCalculator:
                     if debug:
                         preds_np_bis = copy.deepcopy(preds_np)
                         good_preds = preds_np_bis[0]
-
-
-                        ##########
-                        # ON A PARFOIS LA DEDANS DU 0 ET DU 10 !!!
-                        ##########
-
                         good_mask = Image.fromarray(good_preds.astype('uint8'), 'P')
+
                         # Transform mask to set good indexes and palette
                         good_mask = DeepGlobeDataset.index_to_palette(good_mask)
                         good_mask.save('../valid_masks/' + str(i) + '_prediction.png')
@@ -132,8 +129,8 @@ class ScoreCalculator:
                     _tqdm.set_postfix(OrderedDict(iou=f'{iou:.3f}'))
                     valid_ious.append(iou)
 
-        for image in range(len(ious_by_class)):  # DEBUG
-            print(str(image) + ' : ' + str(ious_by_class[image]))
+        valid_iou = np.mean(valid_ious)
+        print(f'[Score Calculator] valid iou: {valid_iou}')
 
         # Compute mean ious by class
         iou_means_by_class = []
@@ -149,12 +146,27 @@ class ScoreCalculator:
                 if num_val != 0.0:
                     iou_means_by_class.append((val / num_val))
                 else:
-                    print('No detection found for this class')  # DEBUG
+                    print('No detection found for class ' + str(i))  # DEBUG
                     iou_means_by_class.append(0.0)
 
-        valid_iou = np.mean(valid_ious)
-        print(f'[Score Calculator] valid iou: {valid_iou}')
-        print(f'[Score Calculator] iou means by class: {iou_means_by_class}')
+        i = 0
+        for score in iou_means_by_class:
+            i += 1
+            if i == color_correspondences['black']['index']:
+                print(color_correspondences['black']['description'] + ' : ' + str(score))
+            elif i == color_correspondences['green']['index']:
+                print(color_correspondences['green']['description'] + ' : ' + str(score))
+            elif i == color_correspondences['yellow']['index']:
+                print(color_correspondences['yellow']['description'] + ' : ' + str(score))
+            elif i == color_correspondences['cyan']['index']:
+                print(color_correspondences['cyan']['description'] + ' : ' + str(score))
+            elif i == color_correspondences['magenta']['index']:
+                print(color_correspondences['magenta']['description'] + ' : ' + str(score))
+            elif i == color_correspondences['blue']['index']:
+                print(color_correspondences['blue']['description'] + ' : ' + str(score))
+            elif i == color_correspondences['white']['index']:
+                print(color_correspondences['white']['description'] + ' : ' + str(score))
+
 
 
 if __name__ == '__main__':

@@ -28,9 +28,18 @@ class DeepGlobeDataset(Dataset):
         valid_ids = self.base_dir / 'ImageSets' / 'Segmentation' / 'val.txt'
         with open(valid_ids, 'r') as f:
             valid_ids = f.readlines()
+
+        ####
+        train_ids = self.base_dir / 'ImageSets' / 'Segmentation' / 'train.txt'
+        with open(train_ids, 'r') as f:
+            train_ids = f.readlines()
+        ####
+
+        lbl_dir = 'SegmentationClass'
         if self.split == 'valid':
-            lbl_dir = 'SegmentationClass'
             img_ids = valid_ids
+        elif self.split == 'train':
+            img_ids = train_ids
         else:
             valid_set = set([valid_id.strip() for valid_id in valid_ids])
             lbl_dir = 'SegmentationClassAug' if 'aug' in split else 'SegmentationClass'
@@ -153,7 +162,8 @@ class DeepGlobeDataset(Dataset):
                     # print('A 10 was here')
                     # pil_image.putpixel((i_index, j_index), 150)
                 else:
-                    print("[WARNING] Unknown color " + str(pixels[i_index, j_index]) + ' during palette conversion.')
+                    # For debug
+                    # print("[WARNING] Unknown color " + str(pixels[i_index, j_index]) + ' during palette conversion.')
                     pil_image.putpixel((i_index, j_index), color_correspondences['black']['web-palette'])
                     # exit(-1)
 
