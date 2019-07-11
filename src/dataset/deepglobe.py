@@ -69,6 +69,8 @@ class DeepGlobeDataset(Dataset):
 
     def __getitem__(self, index):
         img_path = self.img_paths[index]
+        # For debug
+        # print('[LOADER] Got image ' + str(img_path))
         img = np.array(Image.open(img_path))
         if self.split == 'test':
             # Resize (Scale & Pad & Crop)
@@ -144,9 +146,16 @@ class DeepGlobeDataset(Dataset):
                     pil_image.putpixel((i_index, j_index), color_correspondences['cyan']['web-palette'])
                 elif pixels[i_index, j_index] == color_correspondences['white']['index']:
                     pil_image.putpixel((i_index, j_index), color_correspondences['white']['web-palette'])
+                # elif pixels[i_index, j_index] == 0:
+                    # print('A 0 was here')
+                    # pil_image.putpixel((i_index, j_index), 100)
+                # elif pixels[i_index, j_index] == 10:
+                    # print('A 10 was here')
+                    # pil_image.putpixel((i_index, j_index), 150)
                 else:
-                    print("[ERROR] Unknown color " + str(pixels[i_index, j_index]))
-                    exit(-1)
+                    print("[WARNING] Unknown color " + str(pixels[i_index, j_index]) + ' during palette conversion.')
+                    pil_image.putpixel((i_index, j_index), color_correspondences['black']['web-palette'])
+                    # exit(-1)
 
         pil_image.putpalette(web_palette_values)
 
@@ -174,7 +183,8 @@ class DeepGlobeDataset(Dataset):
                 elif pixels[i_index, j_index] == color_correspondences['white']['web-palette']:  # WHITE
                     pixels[i_index, j_index] = color_correspondences['white']['index']  # Barren land
                 else:
-                    print("[ERROR] Unknown color in label")
+                    # For debug
+                    # print("[ERROR] Unknown color in label")
                     exit(-1)
 
         return pil_image

@@ -44,10 +44,12 @@ def lovasz_softmax_flat(prb, lbl, ignore_index, only_present):
     total_loss = 0
     cnt = 0
     for c in range(C):
-        fg = (lbl == c).float()  # foreground for class c
+        # fg = (lbl == c).float()  # foreground for class c
+        fg = (lbl == (c+1)).float()  # foreground for class c
         if only_present and fg.sum() == 0:
             continue
-        errors = (fg - prb[:, c]).abs()
+        # errors = (fg - prb[:, c]).abs()
+        errors = (fg - prb[:, (c+1)]).abs()
         errors_sorted, perm = torch.sort(errors, dim=0, descending=True)
         perm = perm.data
         fg_sorted = fg[perm]

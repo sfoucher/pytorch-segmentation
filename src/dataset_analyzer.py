@@ -79,7 +79,7 @@ class DatasetAnalyzer:
             input_img.thumbnail((50, 50), Image.ANTIALIAS)
             for val in input_img.getdata():
                 if val not in label_values:
-                    self.number_of_pixels_dict[val] = 0
+                    self.number_of_pixels_dict[val] = 1
                     label_values.append(val)
                 else:
                     self.number_of_pixels_dict[val] += 1
@@ -97,5 +97,5 @@ if __name__ == '__main__':
     dataset = DatasetAnalyzer()
     print('[Dataset analyzer] Number of train images : '+str(dataset.get_nb_train_images()))
     print('[Dataset analyzer] Number of validation images : '+str(dataset.get_nb_valid_images()))
-    # dataset.compute_mask_colors_ratio()
+    dataset.compute_mask_colors_ratio()
     dataset.make_pie_chart()

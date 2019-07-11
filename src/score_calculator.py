@@ -9,6 +9,8 @@ from collections import OrderedDict
 import numpy as np
 import torch.nn.functional as F
 
+from PIL import Image
+import copy
 
 class ScoreCalculator:
     def __init__(self, model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe',
@@ -38,7 +40,7 @@ class ScoreCalculator:
             self.classes = np.arange(1, 20)
         elif dataset == 'deepglobe':
             self.valid_dataset = DeepGlobeDataset(split=split, net_type=net_type)
-            self.classes = np.arange(1, 8)
+            self.classes = np.arange(0, 20)
         else:
             raise NotImplementedError
 
@@ -58,6 +60,7 @@ class ScoreCalculator:
     def compute_ious(pred, label, classes, ignore_index=255, only_present=True):
         pred[label == ignore_index] = 0
         ious = []
+
         for c in classes:
             label_c = label == c
             if only_present and np.sum(label_c) == 0:
@@ -66,8 +69,20 @@ class ScoreCalculator:
             pred_c = pred == c
             intersection = np.logical_and(pred_c, label_c).sum()
             union = np.logical_or(pred_c, label_c).sum()
-            if union != 0:
-                ious.append(intersection / union)
+            """
+            if c == 0:
+                print('0 :')
+                print(intersection)
+                print(union)
+            if c == 10:
+                print('10 :')
+                print(intersection)
+                print(union)
+            """
+            if float(union) != 0.0:
+                ious.append(float(intersection) / float(union))
+            else:
+                ious.append(0.0)
         return ious if ious else [1]
 
     @staticmethod
@@ -77,28 +92,48 @@ class ScoreCalculator:
         return iou
 
     def compute_valid_loss_and_iou(self):
+        debug = True
         valid_ious = []
         ious_by_class = []
         self.model.eval()
+        i = 0
         with torch.no_grad():
             with tqdm(self.valid_loader) as _tqdm:
                 for batched in _tqdm:
+                    i += 1
                     images, labels = batched
                     if self.fp16:
                         images = images.half()
                     images, labels = images.to(self.device), labels.to(self.device)
                     preds = self.model.tta(images, net_type=self.net_type)
-
+                    preds = preds.argmax(dim=1)
                     preds_np = preds.detach().cpu().numpy()
                     labels_np = labels.detach().cpu().numpy()
 
-                    # I changed a parameter in the compute_iou method to prevent it from yielding nans
-                    iou = ScoreCalculator.compute_iou_batch(np.argmax(preds_np, axis=1), labels_np, self.classes)
+                    if debug:
+                        preds_np_bis = copy.deepcopy(preds_np)
+                        good_preds = preds_np_bis[0]
 
-                    ious_by_class.append(ScoreCalculator.compute_ious(np.argmax(preds_np, axis=1), labels_np, self.classes))
+
+                        ##########
+                        # ON A PARFOIS LA DEDANS DU 0 ET DU 10 !!!
+                        ##########
+
+                        good_mask = Image.fromarray(good_preds.astype('uint8'), 'P')
+                        # Transform mask to set good indexes and palette
+                        good_mask = DeepGlobeDataset.index_to_palette(good_mask)
+                        good_mask.save('../valid_masks/' + str(i) + '_prediction.png')
+
+                    # I changed a parameter in the compute_iou method to prevent it from yielding nans
+
+                    iou = ScoreCalculator.compute_iou_batch(preds_np, labels_np, self.classes)
+                    ious_by_class.append(ScoreCalculator.compute_ious(preds_np, labels_np, self.classes))
 
                     _tqdm.set_postfix(OrderedDict(iou=f'{iou:.3f}'))
                     valid_ious.append(iou)
+
+        for image in range(len(ious_by_class)):  # DEBUG
+            print(str(image) + ' : ' + str(ious_by_class[image]))
 
         # Compute mean ious by class
         iou_means_by_class = []
@@ -110,7 +145,12 @@ class ScoreCalculator:
                     if not np.isnan(ious_by_class[image][i]):
                         val += ious_by_class[image][i]
                         num_val += 1.0
-                iou_means_by_class.append((val/num_val) if (num_val != 0.0) else 0.0)
+
+                if num_val != 0.0:
+                    iou_means_by_class.append((val / num_val))
+                else:
+                    print('No detection found for this class')  # DEBUG
+                    iou_means_by_class.append(0.0)
 
         valid_iou = np.mean(valid_ious)
         print(f'[Score Calculator] valid iou: {valid_iou}')
@@ -119,6 +159,8 @@ class ScoreCalculator:
 
 if __name__ == '__main__':
     print('[Score Calculator] Starting computation')
-    score_calculator = ScoreCalculator()
+    # score_calculator = ScoreCalculator(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth')
+    score_calculator = ScoreCalculator(
+        model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs-small-patches/model.pth')
     score_calculator.compute_valid_loss_and_iou()
 
