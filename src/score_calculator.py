@@ -7,12 +7,12 @@ from dataset.deepglobe import DeepGlobeDataset
 from tqdm import tqdm
 from collections import OrderedDict
 import numpy as np
-import torch.nn.functional as F
 
 from utils.constants import color_correspondences
 
 from PIL import Image
 import copy
+
 
 class ScoreCalculator:
     def __init__(self, model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe',
@@ -129,9 +129,6 @@ class ScoreCalculator:
                     _tqdm.set_postfix(OrderedDict(iou=f'{iou:.3f}'))
                     valid_ious.append(iou)
 
-        valid_iou = np.mean(valid_ious)
-        print(f'[Score Calculator] valid iou: {valid_iou}')
-
         # Compute mean ious by class
         iou_means_by_class = []
         if ious_by_class[0]:
@@ -167,12 +164,14 @@ class ScoreCalculator:
             elif i == color_correspondences['white']['index']:
                 print(color_correspondences['white']['description'] + ' : ' + str(score))
 
+        # Don't count the unknown class
+        print(f'[Score Calculator] Mean performance for all classes : {np.mean(iou_means_by_class[1:])}')
 
 
 if __name__ == '__main__':
     print('[Score Calculator] Starting computation')
-    # score_calculator = ScoreCalculator(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth')
     score_calculator = ScoreCalculator(
-        model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs-small-patches/model.pth')
+        # model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth')
+        model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_fix-split/model.pth')
     score_calculator.compute_valid_loss_and_iou()
 
