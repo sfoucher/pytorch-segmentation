@@ -61,16 +61,8 @@ else:
     model = SPPNet(**net_config)
 
 dataset = data_config['dataset']
-if dataset == 'pascal':
-    from dataset.pascal_voc import PascalVocDataset as Dataset
-    net_config['output_channels'] = 21
-    classes = np.arange(1, 22)
-elif dataset == 'cityscapes':
-    from dataset.cityscapes import CityscapesDataset as Dataset
-    net_config['output_channels'] = 19
-    classes = np.arange(1, 20)
-elif dataset == 'deepglobe':
-    from dataset.deepglobe import DeepGlobeDataset as Dataset
+if dataset == 'deepglobe-dynamic':
+    from dataset.deepglobe_dynamic import DeepGlobeDatasetDynamic as Dataset
     net_config['output_channels'] = 7
     classes = np.arange(1, 8)
 else:
@@ -109,20 +101,26 @@ else:
     loss_history = []
     iou_history = []
 
-# Dataset
+
 affine_augmenter = albu.Compose([albu.HorizontalFlip(p=.5),
                                  # Rotate(5, p=.5)
                                  ])
 # image_augmenter = albu.Compose([albu.GaussNoise(p=.5),
 #                                 albu.RandomBrightnessContrast(p=.5)])
 image_augmenter = None
+
+# This must be put in the loop for the dynamic training
+"""
+# Dataset
+
+
 train_dataset = Dataset(affine_augmenter=affine_augmenter, image_augmenter=image_augmenter,
                         net_type=net_type, **data_config)
 valid_dataset = Dataset(split='valid', net_type=net_type, **data_config)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4,
                           pin_memory=True, drop_last=True)
 valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
-
+"""
 # To device
 model = model.to(device)
 
@@ -174,6 +172,14 @@ for i_epoch in range(start_epoch, max_epoch):
     train_losses = []
     train_ious = []
     model.train()
+
+    train_dataset = Dataset(affine_augmenter=affine_augmenter, image_augmenter=image_augmenter,
+                            net_type=net_type, **data_config)
+    valid_dataset = Dataset(split='valid', net_type=net_type, **data_config)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4,
+                              pin_memory=True, drop_last=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
+
     with tqdm(train_loader) as _tqdm:
         for batched in _tqdm:
             images, labels = batched
