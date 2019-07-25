@@ -109,11 +109,10 @@ affine_augmenter = albu.Compose([albu.HorizontalFlip(p=.5),
 #                                 albu.RandomBrightnessContrast(p=.5)])
 image_augmenter = None
 
-# This must be put in the loop for the dynamic training
+# This has been put in the loop for the dynamic training
+
 """
 # Dataset
-
-
 train_dataset = Dataset(affine_augmenter=affine_augmenter, image_augmenter=image_augmenter,
                         net_type=net_type, **data_config)
 valid_dataset = Dataset(split='valid', net_type=net_type, **data_config)
@@ -121,6 +120,7 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
                           pin_memory=True, drop_last=True)
 valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
 """
+
 # To device
 model = model.to(device)
 
@@ -173,6 +173,7 @@ for i_epoch in range(start_epoch, max_epoch):
     train_ious = []
     model.train()
 
+    # Initialize randomized but balanced datasets
     train_dataset = Dataset(affine_augmenter=affine_augmenter, image_augmenter=image_augmenter,
                             net_type=net_type, **data_config)
     valid_dataset = Dataset(split='valid', net_type=net_type, **data_config)
@@ -191,11 +192,7 @@ for i_epoch in range(start_epoch, max_epoch):
             if net_type == 'deeplab':
                 preds = F.interpolate(preds, size=labels.shape[1:], mode='bilinear', align_corners=True)
             if fp16:
-                # Prints to debug loss
-                # print("preds.float() : "+str(preds.float()))
-                # print("labels : "+str(labels))
                 loss = loss_fn(preds.float(), labels)
-                # print("loss : " + str(loss))
             else:
                 loss = loss_fn(preds, labels)
 

@@ -4,14 +4,14 @@ Net:
   output_stride: 8
   output_channels: 19
 Data:
-  dataset: 'deepglobe'
+  dataset: 'deepglobe-dynamic'
   target_size: (512, 512)
 Train:
-  max_epoch: 100
+  max_epoch: 200
   batch_size: 2
   fp16: True
-  resume: False
-  pretrained_path: '../model/cityscapes_deeplab_v3_plus/model.pth'
+  resume: True
+  pretrained_path: '../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_dynamic/model.pth'
   freeze: False
   seed: False
 Loss:

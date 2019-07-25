@@ -265,8 +265,8 @@ class Tester:
 
 if __name__ == '__main__':
     print('[Tester] Launching tests.')
-    tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_fix-split/model.pth', dataset='deepglobe', output_channels=19, split='valid', net_type='deeplab', batch_size=1, shuffle=True)
-    tester_deepglobe.infer_image_by_path('../data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/61245_1-1.jpg', display=True, output_name='custom_output')
+    tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_dynamic/model.pth', dataset='deepglobe', output_channels=19, split='valid', net_type='deeplab', batch_size=1, shuffle=True)
+    tester_deepglobe.infer_image_by_path('../data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/115444_4-2.jpg', display=True, output_name='custom_output')
     # tester_deepglobe.infer_image_by_name(image_name="255876", display=False)
     # tester_deepglobe.make_demo_image()
 

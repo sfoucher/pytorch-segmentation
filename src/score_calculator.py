@@ -172,6 +172,6 @@ if __name__ == '__main__':
     print('[Score Calculator] Starting computation')
     score_calculator = ScoreCalculator(
         # model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth')
-        model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_fix-split/model.pth')
+        model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_dynamic/model.pth')
     score_calculator.compute_valid_loss_and_iou()
 
