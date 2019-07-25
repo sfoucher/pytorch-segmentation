@@ -7,7 +7,7 @@ Data:
   dataset: 'deepglobe-dynamic'
   target_size: (512, 512)
 Train:
-  max_epoch: 200
+  max_epoch: 1000
   batch_size: 2
   fp16: True
   resume: True
