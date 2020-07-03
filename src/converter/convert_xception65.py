@@ -38,7 +38,7 @@ def convert_xception65(ckpt_path, num_classes):
         sepconv_converter(pt_block.sep_conv2.block, f'{tf_block_name}/separable_conv2')
         sepconv_converter(pt_block.sep_conv3.block, f'{tf_block_name}/separable_conv3')
 
-    reader = tf.train.NewCheckpointReader(ckpt_path)
+    reader = tf.compat.v1.train.NewCheckpointReader(ckpt_path)
     model = SPPNet(num_classes, enc_type='xception65', dec_type='aspp', output_stride=8)
 
     # Xception
