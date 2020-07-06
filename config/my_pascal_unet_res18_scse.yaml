@@ -8,7 +8,7 @@ Data:
   target_size: (64, 64)
 Train:
   max_epoch: 20
-  batch_size: 2
+  batch_size: 4
   fp16: False
   resume: False
   pretrained_path:

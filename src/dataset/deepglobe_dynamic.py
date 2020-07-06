@@ -30,7 +30,7 @@ class DeepGlobeDatasetDynamic(Dataset):
         self.net_type = net_type
         self.ignore_index = ignore_index
         self.split = split
-
+        self.target_size= target_size
         ######################################
         #          This will change :        #
         ######################################
@@ -120,10 +120,11 @@ class DeepGlobeDatasetDynamic(Dataset):
         if 'train' in self.split:
             if self.net_type == 'deeplab':
                 target_size = (target_size[0] + 1, target_size[1] + 1)
-            self.resizer = albu.Compose([albu.RandomScale(scale_limit=(-0.5, 0.5), p=1.0),
-                                         PadIfNeededRightBottom(min_height=target_size[0], min_width=target_size[1],
-                                                                value=0, ignore_index=self.ignore_index, p=1.0),
-                                         albu.RandomCrop(height=target_size[0], width=target_size[1], p=1.0)])
+            #self.resizer = albu.Compose([albu.RandomScale(scale_limit=(-0.5, 0.5), p=1.0),
+            #                             PadIfNeededRightBottom(min_height=target_size[0], min_width=target_size[1],
+            #                                                    value=0, ignore_index=self.ignore_index, p=1.0),
+            #                             albu.RandomCrop(height=target_size[0], width=target_size[1], p=1.0)])
+            self.resizer = albu.Compose([albu.RandomCrop(height=target_size[0], width=target_size[1], p=1.0)])
         else:
             # self.resizer = None
             self.resizer = albu.Compose([PadIfNeededRightBottom(min_height=target_size[0], min_width=target_size[1],
