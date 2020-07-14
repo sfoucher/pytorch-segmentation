@@ -1,0 +1,23 @@
+Net:
+  enc_type: 'xception65'
+  dec_type: 'aspp'
+  output_stride: 8
+  output_channels: 7
+Data:
+  dataset: 'deepglobe-dynamic'
+  target_size: (64, 64)
+Train:
+  max_epoch: 20
+  batch_size: 2
+  fp16: False
+  resume: False
+  pretrained_path: '/home/sfoucher/DEV/pytorch-segmentation/model/cityscapes_deeplab_v3_plus/model.pth'
+  freeze: True
+  seed: False
+Loss:
+  loss_type: 'Lovasz'
+  ignore_index: 255
+Optimizer:
+  mode: 'sgd'
+  base_lr: 0.001
+  t_max: 10

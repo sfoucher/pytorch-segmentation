@@ -1,0 +1,24 @@
+Net:
+  enc_type: 'resnet18'
+  dec_type: 'unet_seibn'
+  num_filters: 16
+  output_channels: 6
+  pretrained: True
+Data:
+  dataset: 'deepglobe-dynamic'
+  target_size: (64, 64)
+Train:
+  max_epoch: 50
+  batch_size: 8
+  fp16: False
+  resume: False
+  pretrained_path:
+  freeze: True
+  seed: False
+Loss:
+  loss_type: 'Lovasz'
+  ignore_index: 255
+Optimizer:
+  mode: 'adam'
+  base_lr: 0.001
+  t_max: 10
