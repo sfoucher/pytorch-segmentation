@@ -13,7 +13,7 @@ from utils.constants import color_correspondences, web_palette_values
 
 
 class DeepGlobeDataset(Dataset):
-    n_classes = 7
+    n_classes = 6
 
     def __init__(self, base_dir='../data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012', split='train',
                  affine_augmenter=None, image_augmenter=None, target_size=(512, 512),
@@ -106,7 +106,7 @@ class DeepGlobeDataset(Dataset):
 
             lbl = np.array(inter_img)
 
-            lbl[lbl == 255] = 0
+            # lbl[lbl == 255] = 0
             # ImageAugment (RandomBrightness, AddNoise...)
             if self.image_augmenter:
                 augmented = self.image_augmenter(image=img)

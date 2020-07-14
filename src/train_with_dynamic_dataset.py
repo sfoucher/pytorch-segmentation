@@ -17,6 +17,7 @@ from logger.log import debug_logger
 from logger.plot import history_ploter
 from utils.optimizer import create_optimizer
 from utils.metrics import compute_iou_batch
+from utils.visualize import VisdomLinePlotter
 
 import os
 import sys
@@ -62,13 +63,14 @@ def process(config_path):
         model = EncoderDecoderNet(**net_config)
     else:
         net_type = 'deeplab'
+        net_config['output_channels'] = 19
         model = SPPNet(**net_config)
 
     dataset = data_config['dataset']
     if dataset == 'deepglobe-dynamic':
         from dataset.deepglobe_dynamic import DeepGlobeDatasetDynamic as Dataset
-        net_config['output_channels'] = 7
-        classes = np.arange(1, 8)
+        net_config['output_channels'] = 6
+        classes = np.arange(0, 6)
     else:
         raise NotImplementedError
     del data_config['dataset']
@@ -125,23 +127,26 @@ def process(config_path):
     valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
     """
 
-    # To device
-    model = model.to(device)
+    
 
     # Pretrained model
     if pretrained_path:
         logger.info(f'Resume from {pretrained_path}')
         param = torch.load(pretrained_path)
         model.load_state_dict(param)
+        model.logits = torch.nn.Conv2d(256, net_config['output_channels'], 1)
         del param
 
-        #########################################
-        if freeze_enabled:
-            # Code de Rémi
-            # Freeze layers
-            for param_index in range(int((len(optimizer.param_groups[0]['params'])) * 0.5)):
-                optimizer.param_groups[0]['params'][param_index].requires_grad = False
-        #########################################
+    # To device
+    model = model.to(device)
+
+    #########################################
+    if freeze_enabled:
+        # Code de Rémi
+        # Freeze layers
+        for param_index in range(int((len(optimizer.param_groups[0]['params']))*0.5)):
+            optimizer.param_groups[0]['params'][param_index].requires_grad = False
+    #########################################
 
     # fp16
     if fp16:
@@ -167,7 +172,9 @@ def process(config_path):
         param = torch.load(opt_path)
         optimizer.load_state_dict(param)
         del param
-
+    i_iter = 0
+    ma_loss= 0
+    ma_iou= 0
     # Train
     for i_epoch in range(start_epoch, max_epoch):
         logger.info(f'Epoch: {i_epoch}')
@@ -188,7 +195,7 @@ def process(config_path):
         valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
 
         with tqdm(train_loader) as _tqdm:
-            for batched in _tqdm:
+            for i, batched in enumerate(_tqdm):
                 images, labels = batched
                 if fp16:
                     images = images.half()
@@ -209,20 +216,26 @@ def process(config_path):
                 _tqdm.set_postfix(OrderedDict(seg_loss=f'{loss.item():.5f}', iou=f'{iou:.3f}'))
                 train_losses.append(loss.item())
                 train_ious.append(iou)
-
+                ma_loss= 0.01*loss.item() +  0.99 * ma_loss
+                ma_iou= 0.01*iou +  0.99 * ma_iou
+                plotter.plot('loss', 'train', 'iteration Loss', i_iter, loss.item())
+                plotter.plot('iou', 'train', 'iteration iou', i_iter, iou)
+                plotter.plot('loss', 'ma_loss', 'iteration Loss', i_iter, ma_loss)
+                plotter.plot('iou', 'ma_iou', 'iteration iou', i_iter, ma_iou)
                 if fp16:
                     optimizer.backward(loss)
                 else:
                     loss.backward()
                 optimizer.step()
-
+                i_iter += 1
         scheduler.step()
 
         train_loss = np.mean(train_losses)
         train_iou = np.nanmean(train_ious)
         logger.info(f'train loss: {train_loss}')
         logger.info(f'train iou: {train_iou}')
-
+        plotter.plot('loss-epoch', 'train', 'iteration Loss', i_epoch, train_loss)
+        plotter.plot('iou-epoch', 'train', 'iteration iou', i_epoch, train_iou)
         torch.save(model.state_dict(), output_dir.joinpath('model_tmp.pth'))
         torch.save(optimizer.state_dict(), output_dir.joinpath('opt_tmp.pth'))
 
@@ -256,7 +269,8 @@ def process(config_path):
         valid_iou = np.mean(valid_ious)
         logger.info(f'valid seg loss: {valid_loss}')
         logger.info(f'valid iou: {valid_iou}')
-
+        plotter.plot('loss-epoch', 'valid', 'iteration Loss', i_epoch, valid_loss)
+        plotter.plot('iou-epoch', 'valid', 'iteration iou', i_epoch, valid_iou)
         if best_metrics < valid_iou:
             best_metrics = valid_iou
             logger.info('Best Model!')
@@ -275,6 +289,8 @@ def process(config_path):
             pickle.dump(history_dict, f)
 
 if __name__ == "__main__":
+    global plotter
+    plotter = VisdomLinePlotter(env_name='Training')
     # Parse YAML
     parser = argparse.ArgumentParser()
     parser.add_argument('config_path')

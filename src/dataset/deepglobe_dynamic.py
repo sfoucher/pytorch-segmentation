@@ -19,7 +19,7 @@ import random
 
 
 class DeepGlobeDatasetDynamic(Dataset):
-    n_classes = 7
+    n_classes = 6
 
     def __init__(self, base_dir='../data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012', split='train',
                  affine_augmenter=None, image_augmenter=None, target_size=(512, 512),

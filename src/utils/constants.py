@@ -40,11 +40,11 @@ web_palette_values = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 # Like a list of structs, where several fields in the struct can act as a key (index, palette and color)
 # It would also make it easier to loop through
 color_correspondences = {
-    'black': {'web-palette': 0, 'index': 1, 'description': 'Unknown'},
-    'green': {'web-palette': 40, 'index': 2, 'description': 'Forest land'},
-    'yellow': {'web-palette': 45, 'index': 3, 'description': 'Agriculture land'},
-    'blue': {'web-palette': 190, 'index': 4, 'description': 'Water'},
-    'magenta': {'web-palette': 195, 'index': 5, 'description': 'Range land'},
-    'cyan': {'web-palette': 220, 'index': 6, 'description': 'Urban land'},
-    'white': {'web-palette': 225, 'index': 7, 'description': 'Barren land'}
+    'black': {'web-palette': 0, 'index': 255, 'description': 'Unknown'},
+    'green': {'web-palette': 40, 'index': 0, 'description': 'Forest land'},
+    'yellow': {'web-palette': 45, 'index': 1, 'description': 'Agriculture land'},
+    'blue': {'web-palette': 190, 'index': 2, 'description': 'Water'},
+    'magenta': {'web-palette': 195, 'index': 3, 'description': 'Range land'},
+    'cyan': {'web-palette': 220, 'index': 4, 'description': 'Urban land'},
+    'white': {'web-palette': 225, 'index': 5, 'description': 'Barren land'}
 }

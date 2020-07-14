@@ -1,7 +1,8 @@
 Net:
   enc_type: 'resnet18'
   dec_type: 'unet_scse'
-  num_filters: 8
+  num_filters: 16
+  output_channels: 7
   pretrained: True
 Data:
   dataset: 'deepglobe-dynamic'

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader
-from models.net import SPPNet
+from models.net import SPPNet, EncoderDecoderNet
 from dataset.cityscapes import CityscapesDataset
 from dataset.pascal_voc import PascalVocDataset
 from dataset.deepglobe import DeepGlobeDataset
@@ -11,7 +11,10 @@ from utils.preprocess import minmax_normalize
 import matplotlib.pyplot as plt
 
 import copy
-
+import sys, os
+WORKSPACE_DIR = os.path.abspath(os.path.dirname(__file__))
+ROOT_DIR = os.path.abspath(os.path.dirname(WORKSPACE_DIR))
+sys.path.insert(0, ROOT_DIR)
 
 class Tester:
     def __init__(self, model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs/model.pth', dataset='deepglobe',
@@ -26,7 +29,11 @@ class Tester:
         :param batch_size: batch size when loading images (always 1 here)
         :param shuffle: when loading images from dataset
         """
-
+        model_path= '/home/sfoucher/DEV/pytorch-segmentation/model/my_pascal_unet_res18_scse/model.pth'
+        dataset_dir = '/home/sfoucher/DEV/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012'
+        
+        output_channels= 8
+        net_type= 'unet'
         print('[Tester] [Init] Initializing tester...')
         self.dataset = dataset
         self.model_path = model_path
@@ -35,7 +42,11 @@ class Tester:
         print('[Tester] [Init] Loading model ' + model_path + ' with ' + str(output_channels) + ' output channels...')
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.model = SPPNet(output_channels=output_channels).to(self.device)
+        if net_type == 'unet':
+            self.model = EncoderDecoderNet(output_channels= 8, enc_type='resnet18', dec_type='unet_scse',
+                 num_filters=8)
+        else:
+            self.model = SPPNet(output_channels=output_channels).to(self.device)
         param = torch.load(model_path)
         self.model.load_state_dict(param)
         del param
@@ -46,7 +57,7 @@ class Tester:
         elif dataset == 'cityscapes':
             self.valid_dataset = CityscapesDataset(split=split, net_type=net_type)
         elif dataset == 'deepglobe':
-            self.valid_dataset = DeepGlobeDataset(split=split, net_type=net_type)
+            self.valid_dataset = DeepGlobeDataset(base_dir = dataset_dir, target_size=(64, 64), split=split, net_type=net_type)
         else:
             raise NotImplementedError
 
@@ -145,11 +156,12 @@ class Tester:
         custom_img = torch.FloatTensor([custom_img])
 
         print('[Tester] [Single test] Inferring image...')
-        self.model.eval()
+        self.model.eval().to(self.device)
         with torch.no_grad():
             # Send to GPU, infer and collect
             custom_img = custom_img.to(self.device)
-            preds = self.model.tta(custom_img, net_type='deeplab')
+            #preds = self.model.tta(custom_img, net_type='deeplab')
+            preds = self.model.tta(custom_img, net_type='unet')
             preds = preds.argmax(dim=1)
             preds_np = preds.detach().cpu().numpy()
 
@@ -266,7 +278,7 @@ class Tester:
 if __name__ == '__main__':
     print('[Tester] Launching tests.')
     tester_deepglobe = Tester(model_path='../model/deepglobe_deeplabv3_weights-cityscapes_19-outputs_small-patches_dynamic/model.pth', dataset='deepglobe', output_channels=19, split='valid', net_type='deeplab', batch_size=1, shuffle=True)
-    tester_deepglobe.infer_image_by_path('../data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/115444_4-2.jpg', display=True, output_name='custom_output')
+    tester_deepglobe.infer_image_by_path('/home/sfoucher/DEV/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012/JPEGImages/115444_4-2.jpg', display=True, output_name='custom_output')
     # tester_deepglobe.infer_image_by_name(image_name="255876", display=False)
     # tester_deepglobe.make_demo_image()
 
