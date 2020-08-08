@@ -7,15 +7,13 @@ import os
 from shutil import copyfile
 import json
 import albumentations as albu
-from osgeo import gdal
-# enforce GDAL exceptions (otherwise functions return None)
-gdal.UseExceptions()
+import matplotlib.pyplot as plt
 
 dataset_dir= '/home/sfoucher/DEV/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012'
 
-out_dir= '/home/sfoucher/DEV/geoimagenet/dataset_test/deepglobe'
+out_dir= '/home/sfoucher/DEV/geoimagenet/dataset_test/deepglobe_seg'
 
-split = 'val'
+split = 'test'
 def process():
     def palette_to_indexes(pil_image):
         # Then I need to convert these values to a scale of 1..7
@@ -45,12 +43,16 @@ def process():
         return pil_image
     base_dir = Path(dataset_dir)
     ignore_index = 255
-    mode_classif= True
+    mode_classif= False
     target_size = (621, 621)
+    target_size= (128, 128)
     if mode_classif:
         target_size= (64, 64)
-        resizer = albu.Compose([albu.RandomCrop(height=target_size[0], width=target_size[1], p=1.0)])
-        out_dir = '/home/sfoucher/DEV/geoimagenet/dataset_test/deepglobe_classif'
+    resizer = albu.Compose([albu.RandomCrop(height=target_size[0], width=target_size[1], p=1.0)])
+    # resizer = None
+    if not resizer:
+        target_size = (621, 621)
+    out_dir = '/home/sfoucher/DEV/geoimagenet/dataset_test/deepglobe_seg'
     
     out_dir = Path(out_dir) / f'{split}'
     if split == 'test':
@@ -81,49 +83,60 @@ def process():
         lbl_np = np.array(inter_img)
         unique, counts = np.unique(lbl_np, return_counts=True)
         n_max= unique[(counts == counts.max())][0]
+        n_min= unique[(counts == counts.min())][0]
         if n_max >= len(class_mapping):
             continue
+        # if n_min < len(class_mapping):
+        #    n_class = class_mapping[n_min][1]
+        #    lbl_np = (lbl_np == n_min)*255
+        # else:
         n_class = class_mapping[n_max][1]
         # lbl_np = (lbl_np == n_max)*255
         lbl_np = (lbl_np == n_max)*(n_max+1) + (lbl == 255) * 255
+
         lbl_np = lbl_np.astype(np.uint8)
-        if mode_classif:
+        if resizer:
             m = 0
-            n = 0
-            while n < 0.8 * target_size[0] * target_size[1] and m < 20:
-                resized = resizer(image=img, mask=lbl_np)
+            n = 0 # target_size[0] * target_size[1] * 0.5
+            while (n < 0.25 * target_size[0] * target_size[1] or n > 0.75 * target_size[0] * target_size[1]) and m < 20:
+                resized = resizer(image = img, mask = lbl_np)
                 img2, lbl = resized['image'], resized['mask']
                 n = np.count_nonzero(lbl)
                 m += 1
-            if m == 20:
-                print(f'cant find an image: {n_class}')
-                continue
-            else:
-                effectif[n_class] += 1
-                # Image.fromarray(img2).save(Path(out_dir) / f'{Path(img_path).stem}.png')
-                lbl_np = lbl
+            # if m == 20:
+            #    print(f'cant find an image: {n_class}')
+            #    continue
+            #else:
         else:
-            copyfile(img_path, Path(out_dir) / Path(img_path).name)
-        output_driver = gdal.GetDriverByName("GTiff")
-        mask= Image.fromarray(lbl_np)
-        mask_name = Path(lbl_path).stem + "_mask.png"
-        mask.save(Path(out_dir) / mask_name)
-        img_name = f'{Path(img_path).stem}.png'
-        filename = "{}.tif".format(Path(img_path).stem)
-        output_path = os.path.join(out_dir, filename)
-        if os.path.exists(output_path):
-            msg = "Output path [{}] already exists but is expected to not exist.".format(output_path)
-            print(msg)
-            os.remove(output_path)  # gdal raster creation fails if file already exists
-        output_dataset = output_driver.Create(output_path, target_size[1], target_size[0], 3, 1)
-        for raster_band_idx in range(3):
-            output_dataset.GetRasterBand(raster_band_idx + 1).SetNoDataValue(0)
-            output_dataset.GetRasterBand(raster_band_idx + 1).WriteArray(img2[:, :, raster_band_idx])
-        output_dataset = None  # close output fd
+            img2 = img
+            lbl = lbl_np
+        effectif[n_class] += 1
+        Image.fromarray(img2).save(Path(out_dir) / f'{Path(img_path).stem}.png')
+            #lbl_np = lbl
+        #else:
+        #    copyfile(img_path, Path(out_dir) / Path(img_path).name)
+        if False:
+            import matplotlib
+            #matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            fig, axes = plt.subplots(1, 2, figsize=(10, 20))
+            plt.tight_layout()
+            axes[0].imshow(img2)
+            axes[0].get_xaxis().set_visible(False)
+            axes[0].get_yaxis().set_visible(False)
+            axes[1].imshow(lbl)
+            axes[1].get_xaxis().set_visible(False)
+            axes[1].get_yaxis().set_visible(False)
+            plt.show()
+
+        mask= Image.fromarray(lbl)
+        filename_mask = Path(lbl_path).stem + "_mask.png"
+        mask.save(Path(out_dir) / filename_mask)
+        filename = f'{Path(img_path).stem}.png'
         config_crops= {"crops": [{
                         "type": "raw",
                         "path": filename,
-                        "mask": mask_name,
+                        "path_mask": filename_mask,
                         "shape": [target_size[0], target_size[1], 3],
                         "data_type": 1,
                         "coordinates": [

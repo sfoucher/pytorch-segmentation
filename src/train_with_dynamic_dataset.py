@@ -19,6 +19,7 @@ from utils.optimizer import create_optimizer
 from utils.metrics import compute_iou_batch
 from utils.visualize import VisdomLinePlotter
 
+from datetime import datetime
 import os
 import sys
 WORKSPACE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -69,16 +70,18 @@ def process(config_path):
     dataset = data_config['dataset']
     if dataset == 'deepglobe-dynamic':
         from dataset.deepglobe_dynamic import DeepGlobeDatasetDynamic as Dataset
-        net_config['output_channels'] = 6
-        classes = np.arange(0, 6)
+        net_config['output_channels'] = 7
+        classes = np.arange(0, 7)
     else:
         raise NotImplementedError
     del data_config['dataset']
 
     modelname = config_path.stem
-    output_dir = Path(os.path.join(ROOT_DIR, f'model/{modelname}') )
+    timestamp = datetime.timestamp(datetime.now())
+    print("timestamp =", datetime.fromtimestamp(timestamp))
+    output_dir = Path(os.path.join(ROOT_DIR, f'model/{modelname}_{datetime.fromtimestamp(timestamp)}') )
     output_dir.mkdir(exist_ok=True)
-    log_dir = Path(os.path.join(ROOT_DIR, f'logs/{modelname}') )
+    log_dir = Path(os.path.join(ROOT_DIR, f'logs/{modelname}_{datetime.fromtimestamp(timestamp)}') )
     log_dir.mkdir(exist_ok=True)
     dataset_dir= '/home/sfoucher/DEV/pytorch-segmentation/data/deepglobe_as_pascalvoc/VOCdevkit/VOC2012'
     logger = debug_logger(log_dir)
@@ -108,7 +111,7 @@ def process(config_path):
         iou_history = []
 
 
-    affine_augmenter = albu.Compose([albu.HorizontalFlip(p=.5),
+    affine_augmenter = albu.Compose([albu.HorizontalFlip(p=.5),albu.VerticalFlip(p=.5)
                                     # Rotate(5, p=.5)
                                     ])
     # image_augmenter = albu.Compose([albu.GaussNoise(p=.5),
@@ -147,6 +150,15 @@ def process(config_path):
         for param_index in range(int((len(optimizer.param_groups[0]['params']))*0.5)):
             optimizer.param_groups[0]['params'][param_index].requires_grad = False
     #########################################
+        params_to_update = model.parameters()
+        print("Params to learn:")
+        if freeze_enabled:
+            params_to_update = []
+            for name,param in model.named_parameters():
+                if param.requires_grad == True:
+                    params_to_update.append(param)
+                    print("\t",name)
+        optimizer, scheduler = create_optimizer(params_to_update, **opt_config)
 
     # fp16
     if fp16:

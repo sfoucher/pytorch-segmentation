@@ -172,8 +172,15 @@ class DeepGlobeDatasetDynamic(Dataset):
             self.palette_to_indexes(inter_img)
 
             lbl = np.array(inter_img)
+    
+            # unique, counts = np.unique(lbl, return_counts=True)
+            # n_max= unique[(counts == counts.max())][0]
+            
+            
+            # lbl = (lbl == n_max)*(n_max+1) + (lbl == 255) * 255
+            #lbl = lbl.astype(np.uint8)
 
-            lbl[lbl == 255] = 0
+            
             # ImageAugment (RandomBrightness, AddNoise...)
             if self.image_augmenter:
                 augmented = self.image_augmenter(image=img)
@@ -191,6 +198,10 @@ class DeepGlobeDatasetDynamic(Dataset):
             if self.affine_augmenter:
                 augmented = self.affine_augmenter(image=img, mask=lbl)
                 img, lbl = augmented['image'], augmented['mask']
+
+            unique, counts = np.unique(lbl, return_counts=True)
+            n_max= unique[(counts == counts.max())][0]
+            lbl = (lbl == n_max)*(n_max+1) + (lbl == 255) * 255
 
             if self.debug:
                 print(lbl_path)
